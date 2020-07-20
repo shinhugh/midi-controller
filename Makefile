@@ -12,6 +12,15 @@ OBJ := $(PATH_BUILD)/*.o
 EXE := $(PATH_BUILD)/main
 HEX := $(PATH_BUILD)/*.hex
 
+# Commands and options
+CC := avr-gcc
+CFLAGS := -c -std=c11 -mmcu=atmega328p -Os -I $(PATH_SRC)
+LFLAGS := -mmcu=atmega328p
+OC := avr-objcopy
+OCFLAGS := -O ihex -R .eeprom
+UP := avrdude
+UPFLAGS := -p m328p -c arduino -P /dev/ttyACM0 -F -V
+
 # --------------------------------------------------
 
 # Unconditional targets
@@ -32,10 +41,9 @@ default:
 compile:
 
 	@echo "Compiling."
-	@avr-gcc -Os -DF_CPU=16000000UL -mmcu=atmega328p -c -o $(PATH_BUILD)/main.o \
-$(PATH_SRC)/main.c
-	@avr-gcc -mmcu=atmega328p -o $(PATH_BUILD)/main $(PATH_BUILD)/main.o
-	@avr-objcopy -O ihex -R .eeprom $(PATH_BUILD)/main $(PATH_BUILD)/main.hex
+	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/main.o $(PATH_SRC)/main.c
+	@$(CC) $(LFLAGS) -o $(PATH_BUILD)/main $(PATH_BUILD)/main.o
+	@$(OC) $(OCFLAGS) $(PATH_BUILD)/main $(PATH_BUILD)/main.hex
 
 # --------------------------------------------------
 
@@ -43,8 +51,7 @@ $(PATH_SRC)/main.c
 flash:
 
 	@echo "Flashing."
-	@avrdude -F -V -c arduino -p ATMEGA328P -P /dev/ttyACM0 -b 115200 -U \
-flash:w:$(PATH_BUILD)/main.hex
+	@$(UP) $(UPFLAGS) -U flash:w:$(PATH_BUILD)/main.hex
 
 # --------------------------------------------------
 
