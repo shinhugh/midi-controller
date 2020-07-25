@@ -3,6 +3,9 @@
 // CPU clock speed
 #define F_CPU 16000000UL
 
+#define DELAY_EN 20
+#define DELAY_BUSY 200
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
@@ -56,70 +59,100 @@ void main() {
   // Set bit 3 of DDRD to 1
   DDRD |= (1 << DDD3);
 
+  // ----------------------------------------
+
   // RGB: (255, 255, 255)
   PORTD |= (1 << PORTD6);
   PORTD |= (1 << PORTD5);
   PORTD |= (1 << PORTD3);
 
+  // ----------------------------------------
+
+  _delay_ms(50);
+
   // Function set: 4-bit operation
   PORTB |= (1 << PORTB3);
-  PORTB != (1 << PORTB1);
+  PORTB |= (1 << PORTB1);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
   PORTB &= !(1 << PORTB1);
+  _delay_ms(DELAY_BUSY);
 
   // Function set: 4-bit operation, 2-line display, 5x8 character font
   PORTB |= (1 << PORTB3);
-  PORTB != (1 << PORTB1);
+  PORTB |= (1 << PORTB1);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
   PORTB &= !(1 << PORTB1);
+  _delay_ms(DELAY_BUSY);
 
   PORTB |= (1 << PORTB3);
   PORTD |= (1 << PORTD7);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
   PORTD &= !(1 << PORTD7);
+  _delay_ms(DELAY_BUSY);
 
   // Display control: display on, cursor off, blinking off
   PORTB |= (1 << PORTB3);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
+  _delay_ms(DELAY_BUSY);
 
   PORTB |= (1 << PORTB3);
   PORTD |= (1 << PORTD7);
   PORTB |= (1 << PORTB0);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
   PORTD &= !(1 << PORTD7);
   PORTB &= !(1 << PORTB0);
+  _delay_ms(DELAY_BUSY);
 
   // Entry mode set: increment address, cursor shift right, no display shift
   PORTB |= (1 << PORTB3);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
+  _delay_ms(DELAY_BUSY);
 
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB0);
   PORTB |= (1 << PORTB1);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
   PORTB &= !(1 << PORTB0);
   PORTB &= !(1 << PORTB1);
+  _delay_ms(DELAY_BUSY);
+
+  // ----------------------------------------
 
   // CGRAM/DDRAM write: 'H'
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB4);
   PORTB |= (1 << PORTB0);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
   PORTB &= !(1 << PORTB4);
   PORTB &= !(1 << PORTB0);
+  _delay_ms(DELAY_BUSY);
 
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB4);
   PORTD |= (1 << PORTD7);
+  _delay_ms(DELAY_EN);
   PORTB &= !(1 << PORTB3);
   PORTB &= !(1 << PORTB4);
   PORTD &= !(1 << PORTD7);
+  _delay_ms(DELAY_BUSY);
+
+  // ----------------------------------------
 
   // Sleep
   sleep_enable();
   sei();
   sleep_cpu();
   sleep_disable();
+
+  // ----------------------------------------
 
   // Loop
   while(1) {
