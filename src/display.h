@@ -1,11 +1,15 @@
-// Common to all files
+// Interface to display
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
 // --------------------------------------------------
 
+struct Display {
 
+  
+
+};
 
 // --------------------------------------------------
 
