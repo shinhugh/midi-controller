@@ -3,8 +3,8 @@
 // CPU clock speed
 #define F_CPU 16000000UL
 
-#define DELAY_EN 20
-#define DELAY_BUSY 200
+#define DELAY_EN 10
+#define DELAY_BUSY 100
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -68,7 +68,37 @@ void main() {
 
   // ----------------------------------------
 
-  _delay_ms(50);
+  _delay_ms(200);
+
+  PORTB |= (1 << PORTB3);
+  PORTB |= (1 << PORTB1);
+  PORTB |= (1 << PORTB2);
+  _delay_ms(DELAY_EN);
+  PORTB &= !(1 << PORTB3);
+  PORTB &= !(1 << PORTB1);
+  PORTB &= !(1 << PORTB2);
+
+  _delay_ms(10);
+
+  PORTB |= (1 << PORTB3);
+  PORTB |= (1 << PORTB1);
+  PORTB |= (1 << PORTB2);
+  _delay_ms(DELAY_EN);
+  PORTB &= !(1 << PORTB3);
+  PORTB &= !(1 << PORTB1);
+  PORTB &= !(1 << PORTB2);
+
+  _delay_ms(1);
+
+  PORTB |= (1 << PORTB3);
+  PORTB |= (1 << PORTB1);
+  PORTB |= (1 << PORTB2);
+  _delay_ms(DELAY_EN);
+  PORTB &= !(1 << PORTB3);
+  PORTB &= !(1 << PORTB1);
+  PORTB &= !(1 << PORTB2);
+
+  _delay_ms(DELAY_BUSY);
 
   // Function set: 4-bit operation
   PORTB |= (1 << PORTB3);
