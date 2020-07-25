@@ -3,7 +3,7 @@
 // CPU clock speed
 #define F_CPU 16000000UL
 
-#define DELAY_EN 10
+#define DELAY_EN 1
 #define DELAY_BUSY 100
 
 #include <avr/io.h>
@@ -68,25 +68,27 @@ void main() {
 
   // ----------------------------------------
 
+  /*
+
   _delay_ms(200);
 
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB1);
   PORTB |= (1 << PORTB2);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTB &= !(1 << PORTB1);
-  PORTB &= !(1 << PORTB2);
+  PORTB &= ~(1 << PORTB3);
+  PORTB &= ~(1 << PORTB1);
+  PORTB &= ~(1 << PORTB2);
 
-  _delay_ms(10);
+  _delay_ms(5);
 
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB1);
   PORTB |= (1 << PORTB2);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTB &= !(1 << PORTB1);
-  PORTB &= !(1 << PORTB2);
+  PORTB &= ~(1 << PORTB3);
+  PORTB &= ~(1 << PORTB1);
+  PORTB &= ~(1 << PORTB2);
 
   _delay_ms(1);
 
@@ -94,84 +96,99 @@ void main() {
   PORTB |= (1 << PORTB1);
   PORTB |= (1 << PORTB2);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTB &= !(1 << PORTB1);
-  PORTB &= !(1 << PORTB2);
+  PORTB &= ~(1 << PORTB3);
+  PORTB &= ~(1 << PORTB1);
+  PORTB &= ~(1 << PORTB2);
 
-  _delay_ms(DELAY_BUSY);
+  */
+
+  _delay_ms(500);
 
   // Function set: 4-bit operation
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB1);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTB &= !(1 << PORTB1);
+  PORTB &= ~(1 << PORTB3);
+  PORTB &= ~(1 << PORTB1);
   _delay_ms(DELAY_BUSY);
 
   // Function set: 4-bit operation, 2-line display, 5x8 character font
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB1);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTB &= !(1 << PORTB1);
+  PORTB &= ~(1 << PORTB3);
+  PORTB &= ~(1 << PORTB1);
   _delay_ms(DELAY_BUSY);
 
   PORTB |= (1 << PORTB3);
   PORTD |= (1 << PORTD7);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTD &= !(1 << PORTD7);
+  PORTB &= ~(1 << PORTB3);
+  PORTD &= ~(1 << PORTD7);
   _delay_ms(DELAY_BUSY);
 
   // Display control: display on, cursor off, blinking off
   PORTB |= (1 << PORTB3);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
+  PORTB &= ~(1 << PORTB3);
   _delay_ms(DELAY_BUSY);
 
   PORTB |= (1 << PORTB3);
   PORTD |= (1 << PORTD7);
   PORTB |= (1 << PORTB0);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTD &= !(1 << PORTD7);
-  PORTB &= !(1 << PORTB0);
+  PORTB &= ~(1 << PORTB3);
+  PORTD &= ~(1 << PORTD7);
+  PORTB &= ~(1 << PORTB0);
   _delay_ms(DELAY_BUSY);
 
   // Entry mode set: increment address, cursor shift right, no display shift
   PORTB |= (1 << PORTB3);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
+  PORTB &= ~(1 << PORTB3);
   _delay_ms(DELAY_BUSY);
 
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB0);
   PORTB |= (1 << PORTB1);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTB &= !(1 << PORTB0);
-  PORTB &= !(1 << PORTB1);
+  PORTB &= ~(1 << PORTB3);
+  PORTB &= ~(1 << PORTB0);
+  PORTB &= ~(1 << PORTB1);
   _delay_ms(DELAY_BUSY);
 
   // ----------------------------------------
+
+  // DDRAM address set
+  PORTB |= (1 << PORTB3);
+  PORTD |= (1 << PORTD7);
+  _delay_ms(DELAY_EN);
+  PORTB &= ~(1 << PORTB3);
+  PORTD &= ~(1 << PORTD7);
+  _delay_ms(DELAY_BUSY);
+
+  PORTB |= (1 << PORTB3);
+  _delay_ms(DELAY_EN);
+  PORTB &= ~(1 << PORTB3);
+  _delay_ms(DELAY_BUSY);
 
   // CGRAM/DDRAM write: 'H'
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB4);
   PORTB |= (1 << PORTB0);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTB &= !(1 << PORTB4);
-  PORTB &= !(1 << PORTB0);
+  PORTB &= ~(1 << PORTB3);
+  PORTB &= ~(1 << PORTB4);
+  PORTB &= ~(1 << PORTB0);
   _delay_ms(DELAY_BUSY);
 
   PORTB |= (1 << PORTB3);
   PORTB |= (1 << PORTB4);
   PORTD |= (1 << PORTD7);
   _delay_ms(DELAY_EN);
-  PORTB &= !(1 << PORTB3);
-  PORTB &= !(1 << PORTB4);
-  PORTD &= !(1 << PORTD7);
+  PORTB &= ~(1 << PORTB3);
+  PORTB &= ~(1 << PORTB4);
+  PORTD &= ~(1 << PORTD7);
   _delay_ms(DELAY_BUSY);
 
   // ----------------------------------------
