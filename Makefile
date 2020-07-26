@@ -9,7 +9,7 @@ PATH_SRC := $(PATH_ROOT)/src
 
 # Targets
 OBJ := $(PATH_BUILD)/*.o
-EXE := $(PATH_BUILD)/main
+EXE := $(PATH_BUILD)/program
 HEX := $(PATH_BUILD)/*.hex
 
 # Commands and options
@@ -41,9 +41,11 @@ default:
 compile:
 
 	@echo "Compiling."
+	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/display.o $(PATH_SRC)/display.c
 	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/main.o $(PATH_SRC)/main.c
-	@$(CC) $(LFLAGS) -o $(PATH_BUILD)/main $(PATH_BUILD)/main.o
-	@$(OC) $(OCFLAGS) $(PATH_BUILD)/main $(PATH_BUILD)/main.hex
+	@$(CC) $(LFLAGS) -o $(PATH_BUILD)/program $(PATH_BUILD)/main.o \
+$(PATH_BUILD)/display.o
+	@$(OC) $(OCFLAGS) $(PATH_BUILD)/program $(PATH_BUILD)/program.hex
 
 # --------------------------------------------------
 
@@ -51,7 +53,7 @@ compile:
 flash:
 
 	@echo "Flashing."
-	@$(UP) $(UPFLAGS) -U flash:w:$(PATH_BUILD)/main.hex
+	@$(UP) $(UPFLAGS) -U flash:w:$(PATH_BUILD)/program.hex
 
 # --------------------------------------------------
 
