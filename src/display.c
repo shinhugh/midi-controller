@@ -18,6 +18,7 @@ volatile unsigned int rgb_incr_color_val;
 
 void display_init() {
 
+  // Initialize variables
   rgb_pwm_share_red = 0;
   rgb_pwm_share_green = 0;
   rgb_pwm_share_blue = 0;

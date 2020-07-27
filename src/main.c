@@ -99,6 +99,10 @@ int main() {
   DDRD &= ~(1 << DDD2);
   // Set pin 13 to output mode
   DDRB |= (1 << DDB5);
+  // Set SDA pin to output mode
+  DDRC |= (1 << DDC4);
+  // Set SCL pin to output mode
+  DDRC |= (1 << DDC5);
 
   // ----------------------------------------
 
@@ -144,7 +148,7 @@ int main() {
 
   unsigned char button_state_curr = 0;
   unsigned char button_state_last = 0;
-  unsigned int button_press_count = 196;
+  unsigned int button_press_count = 0;
 
   // Print button press count
   display_place_cursor(0, 0);
