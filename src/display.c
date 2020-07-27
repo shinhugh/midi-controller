@@ -1,7 +1,6 @@
 #include "common.h"
 #include <avr/io.h>
 #include <util/delay.h>
-#include <math.h>
 #include "display.h"
 
 // Delay after each instruction
@@ -207,20 +206,25 @@ void display_write_char(unsigned int code) {
 
 void display_write_number(unsigned int number) {
 
+  unsigned int i;
+
   unsigned int length = 0;
-  unsigned number_copy = number;
+  unsigned int number_copy = number;
   while(number_copy > 0) {
     length++;
     number_copy /= 10;
   }
-  length = length > 0 ? length : 1;
+  length = length == 0 ? 1 : length;
 
   unsigned int curr_digit;
-
-  unsigned int i;
-  for(i = length; i > 0; i--) {
-    curr_digit = (number / ((unsigned int) pow(10, i - 1))) % 10;
+  unsigned int divisor = 1;
+  for(i = 0; i < length - 1; i++) {
+    divisor *= 10;
+  }
+  for(i = 0; i < length; i++) {
+    curr_digit = (unsigned int) ((number / divisor) % 10);
     display_write_char(0x30 + curr_digit);
+    divisor /= 10;
   }
 
 }

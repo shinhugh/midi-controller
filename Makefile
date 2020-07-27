@@ -14,7 +14,7 @@ HEX := $(PATH_BUILD)/*.hex
 
 # Commands and options
 CC := avr-gcc
-CFLAGS := -c -std=c11 -mmcu=atmega328p -Os -I $(PATH_SRC)
+CFLAGS := -c -std=c11 -mmcu=atmega328p -Os -Wall -I $(PATH_SRC)
 LFLAGS := -mmcu=atmega328p
 OC := avr-objcopy
 OCFLAGS := -O ihex -R .eeprom

@@ -38,7 +38,7 @@ volatile unsigned char button_state;
 
 ISR(TIMER0_OVF_vect, ISR_BLOCK) {
 
-  // After the passage of a single PWM time unit
+  // PWM
   if(ovf_count_pwm >= OVF_PERIOD_PWM) {
     // PWM updates
     display_pwm(pwm_curr);
@@ -79,12 +79,13 @@ ISR(TIMER0_OVF_vect, ISR_BLOCK) {
 
 // --------------------------------------------------
 
-void main() {
+int main() {
 
   _delay_ms(DELAY_INIT);
 
   // ----------------------------------------
 
+  // Initialize global variables
   pwm_curr = 0;
   ovf_count_pwm = 0;
   ovf_count_rgb_trans = 0;
@@ -96,9 +97,12 @@ void main() {
 
   // Set pin 2 to input mode
   DDRD &= ~(1 << DDD2);
+  // Set pin 13 to output mode
+  DDRB |= (1 << DDB5);
 
   // ----------------------------------------
 
+  // Initialize display
   display_init();
 
   // ----------------------------------------
@@ -113,10 +117,14 @@ void main() {
 
   // ----------------------------------------
 
+  // Set backlight to white
   display_set_backlight_rgb(100, 100, 100);
 
+  // Clear display
   display_clear();
+
   /*
+  // Print message
   display_write_char(0x48); // 'H'
   display_write_char(0x65); // 'e'
   display_write_char(0x6c); // 'l'
@@ -131,23 +139,42 @@ void main() {
 
   // ----------------------------------------
 
+  // Turn built-in LED off
+  PORTB &= ~(1 << PORTB5);
+
+  unsigned char button_state_curr = 0;
   unsigned char button_state_last = 0;
-  unsigned int button_press_count = 0;
+  unsigned int button_press_count = 196;
+
+  // Print button press count
+  display_place_cursor(0, 0);
+  display_write_number(button_press_count);
 
   // Loop
   while(1) {
 
-    // Handle button press
-    if(button_state && !button_state_last) {
+    // Light up built-in LED if button is being pressed
+    if(button_state) {
+      PORTB |= (1 << PORTB5);
+    } else {
+      PORTB &= ~(1 << PORTB5);
+    }
+
+    // Sample button state
+    button_state_curr = button_state;
+    // Compare current sample with last sample
+    if(button_state_curr == 1 && button_state_last == 0) {
+      // Increment button press count
       button_press_count++;
+      // Print button press count
       display_place_cursor(0, 0);
       display_write_number(button_press_count);
     }
-    button_state_last = button_state;
-
-    display_place_cursor(1, 0);
-    display_write_number(button_state);
+    // Update last sample to hold current state
+    button_state_last = button_state_curr;
 
   }
+
+  return 0;
 
 }
