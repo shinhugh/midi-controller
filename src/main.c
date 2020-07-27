@@ -7,91 +7,73 @@
 #include <util/delay.h>
 #include "display.h"
 
-#define OVF_FREQ_RGB_PWM 12
-#define OVF_FREQ_RGB_TRANS 1600
+// --------------------------------------------------
+
+// Delay amount at boot
+#define DELAY_INIT 100
+
+// Length of a single PWM time unit, given by number of timer overflows
+#define OVF_PERIOD_PWM 5
+
+// Period between backlight RGB shift, given by number of timer overflows
+#define OVF_PERIOD_RGB_TRANS 1000
+
+// Period between button samples, given by number of timer overflows
+#define OVF_PERIOD_BUTTON 20
+
+// Number of consecutive button samples required to read pressed to be
+// acknowledged
+#define BUTTON_HOLD_ACK 20
 
 // --------------------------------------------------
 
 volatile unsigned int pwm_curr;
-volatile unsigned int ovf_count_rgb_pwm;
+volatile unsigned int ovf_count_pwm;
 volatile unsigned int ovf_count_rgb_trans;
-volatile unsigned char rgb_incr_color;
-volatile unsigned char rgb_incr_color_val;
+volatile unsigned int ovf_count_button;
+volatile unsigned int button_hold_curr;
+volatile unsigned char button_state;
 
 // --------------------------------------------------
 
 ISR(TIMER0_OVF_vect, ISR_BLOCK) {
 
-  if(ovf_count_rgb_pwm >= OVF_FREQ_RGB_PWM) {
-    if(pwm_curr) {
-      if(pwm_curr == rgb_pwm_share_red) {
-        PORTD &= ~(1 << PORTD6);
-      }
-      if(pwm_curr == rgb_pwm_share_green) {
-        PORTD &= ~(1 << PORTD5);
-      }
-      if(pwm_curr == rgb_pwm_share_blue) {
-        PORTD &= ~(1 << PORTD3);
+  // After the passage of a single PWM time unit
+  if(ovf_count_pwm >= OVF_PERIOD_PWM) {
+    // PWM updates
+    display_pwm(pwm_curr);
+    // Move PWM marker forward
+    pwm_curr = (pwm_curr + 1) % PWM_DEPTH;
+    // Reset timer overflow count for PWM
+    ovf_count_pwm = 0;
+  } else {
+    ovf_count_pwm++;
+  }
+
+  // Display backlight RGB transition
+  if(ovf_count_rgb_trans >= OVF_PERIOD_RGB_TRANS) {
+    display_backlight_rgb_trans();
+    ovf_count_rgb_trans = 0;
+  } else {
+    ovf_count_rgb_trans++;
+  }
+
+  // Button press
+  if(ovf_count_button >= OVF_PERIOD_BUTTON) {
+    if(!(PIND & (1 << PIND2)) ^ button_state) {
+      if(button_hold_curr >= BUTTON_HOLD_ACK) {
+        button_state = !button_state;
+        button_hold_curr = 0;
+      } else {
+        button_hold_curr++;
       }
     } else {
-      if(rgb_pwm_share_red) {
-        PORTD |= (1 << PORTD6);
-      }
-      else {
-        PORTD &= ~(1 << PORTD6);
-      }
-      if(rgb_pwm_share_green) {
-        PORTD |= (1 << PORTD5);
-      }
-      else {
-        PORTD &= ~(1 << PORTD5);
-      }
-      if(rgb_pwm_share_blue) {
-        PORTD |= (1 << PORTD3);
-      }
-      else {
-        PORTD &= ~(1 << PORTD3);
-      }
+      button_hold_curr = 0;
     }
-    pwm_curr = (pwm_curr + 1) % PWM_DEPTH;
-    ovf_count_rgb_pwm = 0;
+    ovf_count_button = 0;
+  } else {
+    ovf_count_button++;
   }
-  ovf_count_rgb_pwm++;
-
-  if(ovf_count_rgb_trans >= OVF_FREQ_RGB_TRANS) {
-    if(rgb_incr_color == 0) {
-      display_set_backlight_rgb(rgb_incr_color_val, 0,
-      PWM_DEPTH - rgb_incr_color_val);
-      if(rgb_incr_color_val == PWM_DEPTH) {
-        rgb_incr_color = 1;
-        rgb_incr_color_val = 1;
-      } else {
-        rgb_incr_color_val++;
-      }
-    }
-    if(rgb_incr_color == 1) {
-      display_set_backlight_rgb(PWM_DEPTH - rgb_incr_color_val,
-      rgb_incr_color_val, 0);
-      if(rgb_incr_color_val == PWM_DEPTH) {
-        rgb_incr_color = 2;
-        rgb_incr_color_val = 1;
-      } else {
-        rgb_incr_color_val++;
-      }
-    }
-    if(rgb_incr_color == 2) {
-      display_set_backlight_rgb(0, PWM_DEPTH - rgb_incr_color_val,
-      rgb_incr_color_val);
-      if(rgb_incr_color_val == PWM_DEPTH) {
-        rgb_incr_color = 0;
-        rgb_incr_color_val = 1;
-      } else {
-        rgb_incr_color_val++;
-      }
-    }
-    ovf_count_rgb_trans = 0;
-  }
-  ovf_count_rgb_trans++;
 
 }
 
@@ -104,10 +86,11 @@ void main() {
   // ----------------------------------------
 
   pwm_curr = 0;
-  ovf_count_rgb_pwm = 0;
+  ovf_count_pwm = 0;
   ovf_count_rgb_trans = 0;
-  rgb_incr_color = 0;
-  rgb_incr_color_val = PWM_DEPTH;
+  ovf_count_button = 0;
+  button_hold_curr = 0;
+  button_state = 0;
 
   // ----------------------------------------
 
@@ -120,14 +103,20 @@ void main() {
 
   // ----------------------------------------
 
+  // Initialize timer0 at 0
   TCNT0 = 0;
+  // Enable timer0
   TCCR0B = (1 << CS00);
+  // Enable interrupts caused by timer0
   TIMSK0 = (1 << TOIE0);
   sei();
 
   // ----------------------------------------
 
+  display_set_backlight_rgb(100, 100, 100);
+
   display_clear();
+  /*
   display_write_char(0x48); // 'H'
   display_write_char(0x65); // 'e'
   display_write_char(0x6c); // 'l'
@@ -138,10 +127,27 @@ void main() {
   display_write_char(0xcb); // 'hi' [katakana]
   display_write_char(0xad); // 'yu' (small) [katakana]
   display_write_char(0xb0); // '-' [katakana]
+  */
 
   // ----------------------------------------
 
+  unsigned char button_state_last = 0;
+  unsigned int button_press_count = 0;
+
   // Loop
-  while(1);
+  while(1) {
+
+    // Handle button press
+    if(button_state && !button_state_last) {
+      button_press_count++;
+      display_place_cursor(0, 0);
+      display_write_number(button_press_count);
+    }
+    button_state_last = button_state;
+
+    display_place_cursor(1, 0);
+    display_write_number(button_state);
+
+  }
 
 }

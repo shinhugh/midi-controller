@@ -29,9 +29,15 @@ void display_clear();
 
 void display_write_char(unsigned int);
 
+void display_write_number(unsigned int);
+
 void display_place_cursor(unsigned int, unsigned int);
 
+void display_pwm(unsigned int);
+
 void display_set_backlight_rgb(unsigned int, unsigned int, unsigned int);
+
+void display_backlight_rgb_trans();
 
 // --------------------------------------------------
 

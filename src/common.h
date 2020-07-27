@@ -8,10 +8,7 @@
 // CPU clock speed
 #define F_CPU 16000000UL
 
-// Delay amount at boot
-#define DELAY_INIT 100
-
-// Bit-depth of PWM
+// Number of time units per PWM cycle; granularity of PWM cycle
 #define PWM_DEPTH 100
 
 // --------------------------------------------------
