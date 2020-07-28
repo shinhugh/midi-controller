@@ -5,104 +5,75 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <util/delay.h>
+#include <stdint.h>
 #include "display.h"
 
 // --------------------------------------------------
 
-// Delay amount at boot
+/*
+ * ATmega328P microcontroller
+ * - 16 MHz clock
+ *
+ * Liquid crystal LED 16x2 RGB display
+ * - Register select: PB4
+ * - Enable: PB3
+ * - Data line d7: PD7
+ * - Data line d6: PB0
+ * - Data line d5: PB1
+ * - Data line d4: PB2
+ * - Backlight RGB red: PD6
+ * - Backlight RGB green: PD5
+ * - Backlight RGB blue: PD3
+ */
+
+// --------------------------------------------------
+
+// Value that timer overflow counter resets to 0 at
+#define OVF_CNT_RST 4294967296
+
+// Delay period at the very beginning of program
 #define DELAY_INIT 100
 
-// Length of a single PWM time unit, given by number of timer overflows
-#define OVF_PERIOD_PWM 5
+// --------------------------------------------------
 
-// Period between backlight RGB shift, given by number of timer overflows
-#define OVF_PERIOD_RGB_TRANS 1000
-
-// Period between button samples, given by number of timer overflows
-#define OVF_PERIOD_BUTTON 20
-
-// Number of consecutive button samples required to read pressed to be
-// acknowledged
-#define BUTTON_HOLD_ACK 20
+// Timer overflow counter
+volatile uint32_t timer_ovf_count;
 
 // --------------------------------------------------
 
-volatile unsigned int pwm_curr;
-volatile unsigned int ovf_count_pwm;
-volatile unsigned int ovf_count_rgb_trans;
-volatile unsigned int ovf_count_button;
-volatile unsigned int button_hold_curr;
-volatile unsigned char button_state;
-
-// --------------------------------------------------
-
+// Interrupt handler for timer0 overflow
 ISR(TIMER0_OVF_vect, ISR_BLOCK) {
 
-  // PWM
-  if(ovf_count_pwm >= OVF_PERIOD_PWM) {
-    // PWM updates
-    display_pwm(pwm_curr);
-    // Move PWM marker forward
-    pwm_curr = (pwm_curr + 1) % PWM_DEPTH;
-    // Reset timer overflow count for PWM
-    ovf_count_pwm = 0;
-  } else {
-    ovf_count_pwm++;
-  }
-
-  // Display backlight RGB transition
-  if(ovf_count_rgb_trans >= OVF_PERIOD_RGB_TRANS) {
-    display_backlight_rgb_trans();
-    ovf_count_rgb_trans = 0;
-  } else {
-    ovf_count_rgb_trans++;
-  }
-
-  // Button press
-  if(ovf_count_button >= OVF_PERIOD_BUTTON) {
-    if(!(PIND & (1 << PIND2)) ^ button_state) {
-      if(button_hold_curr >= BUTTON_HOLD_ACK) {
-        button_state = !button_state;
-        button_hold_curr = 0;
-      } else {
-        button_hold_curr++;
-      }
-    } else {
-      button_hold_curr = 0;
-    }
-    ovf_count_button = 0;
-  } else {
-    ovf_count_button++;
-  }
+  // Increment timer overflow counter
+  timer_ovf_count = (timer_ovf_count + 1) % OVF_CNT_RST;
 
 }
 
 // --------------------------------------------------
 
+// Program entry point
 int main() {
 
+  // Briefly pause before running any code to allow peripherals to boot
   _delay_ms(DELAY_INIT);
 
   // ----------------------------------------
 
   // Initialize global variables
-  pwm_curr = 0;
-  ovf_count_pwm = 0;
-  ovf_count_rgb_trans = 0;
-  ovf_count_button = 0;
-  button_hold_curr = 0;
-  button_state = 0;
+  timer_ovf_count = 0;
 
   // ----------------------------------------
 
-  // Set pin 2 to input mode
+  // Set pin directions
   DDRD &= ~(1 << DDD2);
-  // Set pin 13 to output mode
   DDRB |= (1 << DDB5);
-  // Set SDA pin to output mode
-  DDRC |= (1 << DDC4);
-  // Set SCL pin to output mode
-  DDRC |= (1 << DDC5);
+
+  // ----------------------------------------
+
+  // Configure and enable timer0
+  TCNT0 = 0;
+  TCCR0B = (1 << CS00);
+  TIMSK0 = (1 << TOIE0);
 
   // ----------------------------------------
 
@@ -111,73 +82,31 @@ int main() {
 
   // ----------------------------------------
 
-  // Initialize timer0 at 0
-  TCNT0 = 0;
-  // Enable timer0
-  TCCR0B = (1 << CS00);
-  // Enable interrupts caused by timer0
-  TIMSK0 = (1 << TOIE0);
+  // Enable hardware interrupts
   sei();
 
   // ----------------------------------------
 
-  // Set backlight to white
+  // Configure display
   display_set_backlight_rgb(100, 100, 100);
-
-  // Clear display
-  display_clear();
-
-  /*
-  // Print message
-  display_write_char(0x48); // 'H'
-  display_write_char(0x65); // 'e'
-  display_write_char(0x6c); // 'l'
-  display_write_char(0x6c); // 'l'
-  display_write_char(0x6f); // 'o'
-  display_write_char(0x2c); // comma
-  display_write_char(0x20); // space
-  display_write_char(0xcb); // 'hi' [katakana]
-  display_write_char(0xad); // 'yu' (small) [katakana]
-  display_write_char(0xb0); // '-' [katakana]
-  */
 
   // ----------------------------------------
 
-  // Turn built-in LED off
-  PORTB &= ~(1 << PORTB5);
+  // Initialize stack variables
+  uint32_t counter = 0;
 
-  unsigned char button_state_curr = 0;
-  unsigned char button_state_last = 0;
-  unsigned int button_press_count = 0;
+  // ----------------------------------------
 
-  // Print button press count
-  display_place_cursor(0, 0);
-  display_write_number(button_press_count);
-
-  // Loop
+  // Main program loop
   while(1) {
 
-    // Light up built-in LED if button is being pressed
-    if(button_state) {
-      PORTB |= (1 << PORTB5);
-    } else {
-      PORTB &= ~(1 << PORTB5);
-    }
-
-    // Sample button state
-    button_state_curr = button_state;
-    // Compare current sample with last sample
-    if(button_state_curr == 1 && button_state_last == 0) {
-      // Increment button press count
-      button_press_count++;
-      // Print button press count
-      display_place_cursor(0, 0);
-      display_write_number(button_press_count);
-    }
-    // Update last sample to hold current state
-    button_state_last = button_state_curr;
+    display_write_number(counter);
+    _delay_ms(1000);
+    counter++;
 
   }
+
+  // ----------------------------------------
 
   return 0;
 
