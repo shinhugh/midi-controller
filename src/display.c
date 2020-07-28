@@ -1,6 +1,7 @@
 #include "common.h"
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdint.h>
 #include "display.h"
 
 // Delay after each instruction
@@ -9,10 +10,10 @@
 // --------------------------------------------------
 
 // RGB PWM values (0 ~ 100)
-volatile unsigned int rgb_pwm_share_red, rgb_pwm_share_green,
+volatile uint8_t rgb_pwm_share_red, rgb_pwm_share_green,
 rgb_pwm_share_blue;
-volatile unsigned char rgb_incr_color;
-volatile unsigned int rgb_incr_color_val;
+volatile uint8_t rgb_incr_color;
+volatile uint8_t rgb_incr_color_val;
 
 // --------------------------------------------------
 
@@ -23,7 +24,7 @@ void display_init() {
   rgb_pwm_share_green = 0;
   rgb_pwm_share_blue = 0;
   rgb_incr_color = 0;
-  rgb_incr_color_val = PWM_DEPTH;
+  rgb_incr_color_val = PWM_MAX;
 
   // ----------------------------------------
 
@@ -322,17 +323,17 @@ void display_place_cursor(unsigned int row, unsigned int col) {
 
 // --------------------------------------------------
 
-void display_pwm(unsigned int pwm_curr) {
+void display_pwm(unsigned int pwm) {
 
   // Update backlight RGB
-  if(pwm_curr) {
-    if(pwm_curr == rgb_pwm_share_red) {
+  if(pwm) {
+    if(pwm - 1 == rgb_pwm_share_red) {
       PORTD &= ~(1 << PORTD6);
     }
-    if(pwm_curr == rgb_pwm_share_green) {
+    if(pwm - 1 == rgb_pwm_share_green) {
       PORTD &= ~(1 << PORTD5);
     }
-    if(pwm_curr == rgb_pwm_share_blue) {
+    if(pwm - 1 == rgb_pwm_share_blue) {
       PORTD &= ~(1 << PORTD3);
     }
   } else {
@@ -363,9 +364,9 @@ void display_pwm(unsigned int pwm_curr) {
 void display_set_backlight_rgb(unsigned int rgb_red, unsigned int rgb_green,
 unsigned int rgb_blue) {
 
-  rgb_pwm_share_red = rgb_red > PWM_DEPTH ? PWM_DEPTH : rgb_red;
-  rgb_pwm_share_green = rgb_green > PWM_DEPTH ? PWM_DEPTH : rgb_green;
-  rgb_pwm_share_blue = rgb_blue > PWM_DEPTH ? PWM_DEPTH : rgb_blue;
+  rgb_pwm_share_red = rgb_red > PWM_MAX ? PWM_MAX : rgb_red;
+  rgb_pwm_share_green = rgb_green > PWM_MAX ? PWM_MAX : rgb_green;
+  rgb_pwm_share_blue = rgb_blue > PWM_MAX ? PWM_MAX : rgb_blue;
 
 }
 
@@ -375,8 +376,8 @@ void display_backlight_rgb_trans() {
 
   if(rgb_incr_color == 0) {
     display_set_backlight_rgb(rgb_incr_color_val, 0,
-    PWM_DEPTH - rgb_incr_color_val);
-    if(rgb_incr_color_val == PWM_DEPTH) {
+    PWM_MAX - rgb_incr_color_val);
+    if(rgb_incr_color_val == PWM_MAX) {
       rgb_incr_color = 1;
       rgb_incr_color_val = 1;
     } else {
@@ -384,9 +385,9 @@ void display_backlight_rgb_trans() {
     }
   }
   if(rgb_incr_color == 1) {
-    display_set_backlight_rgb(PWM_DEPTH - rgb_incr_color_val,
+    display_set_backlight_rgb(PWM_MAX - rgb_incr_color_val,
     rgb_incr_color_val, 0);
-    if(rgb_incr_color_val == PWM_DEPTH) {
+    if(rgb_incr_color_val == PWM_MAX) {
       rgb_incr_color = 2;
       rgb_incr_color_val = 1;
     } else {
@@ -394,9 +395,9 @@ void display_backlight_rgb_trans() {
     }
   }
   if(rgb_incr_color == 2) {
-    display_set_backlight_rgb(0, PWM_DEPTH - rgb_incr_color_val,
+    display_set_backlight_rgb(0, PWM_MAX - rgb_incr_color_val,
     rgb_incr_color_val);
-    if(rgb_incr_color_val == PWM_DEPTH) {
+    if(rgb_incr_color_val == PWM_MAX) {
       rgb_incr_color = 0;
       rgb_incr_color_val = 1;
     } else {

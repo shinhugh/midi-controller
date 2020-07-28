@@ -18,11 +18,6 @@
 
 // --------------------------------------------------
 
-extern volatile unsigned int rgb_pwm_share_red, rgb_pwm_share_green,
-rgb_pwm_share_blue;
-
-// --------------------------------------------------
-
 void display_init();
 
 void display_clear();

@@ -8,8 +8,8 @@
 // CPU clock speed
 #define F_CPU 16000000UL
 
-// Number of time units per PWM cycle; granularity of PWM cycle
-#define PWM_DEPTH 100
+// Maximum PWM index before resetting to 0
+#define PWM_MAX 255
 
 // --------------------------------------------------
 
