@@ -34,16 +34,16 @@
 // Delay period at the very beginning of program
 #define DELAY_INIT 100
 
-// Width of PWM slot, given in number of timer overflows
-#define OVF_WIDTH_PWM 2
+// Width of PWM slot, given in log of number of timer overflows
+#define OVF_WIDTH_PWM 0
 
 // --------------------------------------------------
 
-// Timer overflow counter
-volatile uint32_t timer0_ovf_count;
+// Flag set when timer0 overflow handler is running, to avoid stack overflow
+volatile uint8_t timer0_ovf_handler_process;
 
-// Flag set when timer1 overflow handler is running, to avoid stack overflow
-volatile uint8_t timer1_ovf_handler_process;
+// Timer1 overflow counter
+volatile uint32_t timer1_ovf_count;
 
 // Quantization value for elapsed time
 volatile uint8_t snap_curr_elapsed_s, snap_last_elapsed_s;
@@ -55,41 +55,40 @@ volatile uint8_t snap_curr_pwm, snap_last_pwm;
 // PWM index
 volatile uint8_t pwm;
 
+// DEBUG START
+volatile uint32_t pwm_cycle_count;
+volatile uint8_t timer0_ovf_handled_count;
+// DEBUG FINISH
+
 // --------------------------------------------------
 
 // Interrupt handler for timer0 overflow
-ISR(TIMER0_OVF_vect, ISR_BLOCK) {
+ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
 
-  // Increment timer overflow counter
-  timer0_ovf_count++;
-
-}
-
-// --------------------------------------------------
-
-// TODO: Use CPC; 16-bit clock overflow is too infrequent
-
-// Interrupt handler for timer1 overflow
-ISR(TIMER1_OVF_vect, ISR_NOBLOCK) {
-
-  if(!timer1_ovf_handler_process) {
+  if(!timer0_ovf_handler_process) {
 
     // Prevent nested interrupts for this handler
-    timer1_ovf_handler_process = 1;
+    timer0_ovf_handler_process = 1;
 
     // ----------------------------------------
 
     // Update PWM slot index
-    snap_curr_pwm = (timer0_ovf_count / OVF_WIDTH_PWM);
+    snap_curr_pwm = timer1_ovf_count; // >> OVF_WIDTH_PWM
     if(snap_curr_pwm != snap_last_pwm) {
       pwm++;
       snap_last_pwm = snap_curr_pwm;
+
+      // DEBUG START
+      if(!pwm) {
+        pwm_cycle_count++;
+      }
+      // DEBUG FINISH
     }
 
     // ----------------------------------------
 
     // Update elapsed seconds
-    snap_curr_elapsed_s = (timer0_ovf_count << 8) / F_CPU;
+    snap_curr_elapsed_s = (timer1_ovf_count << 16) / F_CPU;
     if(snap_curr_elapsed_s != snap_last_elapsed_s) {
       elapsed_s++;
       snap_last_elapsed_s = snap_curr_elapsed_s;
@@ -98,14 +97,33 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK) {
     // ----------------------------------------
 
     // Update PWM output for display backlight RGB
-    display_pwm(pwm);
+//    display_pwm(pwm);
 
     // ----------------------------------------
 
+    // DEBUG START
+    if((timer0_ovf_handled_count >> 7) & 0x01) {
+      PORTB |= (1 << PORTB5);
+    } else {
+      PORTB &= ~(1 << PORTB5);
+    }
+    timer0_ovf_handled_count++;
+    // DEBUG FINISH
+
     // Release lock on future instances of this handler
-    timer1_ovf_handler_process = 0;
+    timer0_ovf_handler_process = 0;
 
   }
+
+}
+
+// --------------------------------------------------
+
+// Interrupt handler for timer1 overflow
+ISR(TIMER1_OVF_vect, ISR_BLOCK) {
+
+  // Increment timer overflow counter
+  timer1_ovf_count++;
 
 }
 
@@ -120,14 +138,19 @@ int main() {
   // ----------------------------------------
 
   // Initialize global variables
-  timer0_ovf_count = 0;
-  timer1_ovf_handler_process = 0;
+  timer0_ovf_handler_process = 0;
+  timer1_ovf_count = 0;
   snap_curr_elapsed_s = 0;
   snap_last_elapsed_s = 0;
   elapsed_s = 0;
   snap_curr_pwm = 0;
   snap_last_pwm = 0;
   pwm = 0;
+
+  // DEBUG START
+  pwm_cycle_count = 0;
+  timer0_ovf_handled_count = 0;
+  // DEBUG FINISH
 
   // ----------------------------------------
 
@@ -139,7 +162,7 @@ int main() {
 
   // Configure and enable timers
   TCNT0 = 0;
-  TCCR0B = (1 << CS00);
+  TCCR0B = (1 << CS02);
   TIMSK0 = (1 << TOIE0);
   TCNT1 = 0;
   TCCR1B = (1 << CS10);
@@ -158,7 +181,7 @@ int main() {
   // ----------------------------------------
 
   // Configure display
-  display_set_backlight_rgb(60, 20, 20);
+//  display_set_backlight_rgb(10, 10, 10);
   display_clear();
 
   // ----------------------------------------
@@ -172,6 +195,13 @@ int main() {
   // Stack variables
   // TODO
 
+  // DEBUG START
+  display_place_cursor(0, 0);
+  display_write_number(elapsed_s);
+  display_place_cursor(1, 0);
+  display_write_number(pwm_cycle_count);
+  // DEBUG FINISH
+
   // ----------------------------------------
 
   // Main program loop
@@ -179,7 +209,12 @@ int main() {
 
     // Print elapsed seconds
     display_place_cursor(0, 0);
-    display_write_number(pwm);
+    display_write_number(elapsed_s);
+
+    // DEBUG START
+    display_place_cursor(1, 0);
+    display_write_number(pwm_cycle_count);
+    // DEBUG FINISH
 
   }
 
