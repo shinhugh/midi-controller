@@ -8,7 +8,7 @@
 // CPU clock speed
 #define F_CPU 16000000UL
 
-// Maximum PWM index before resetting to 0
+// PWM duty cycle maximum value
 #define PWM_MAX 255
 
 // --------------------------------------------------

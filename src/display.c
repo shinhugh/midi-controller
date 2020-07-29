@@ -1,17 +1,15 @@
 #include "common.h"
 #include <avr/io.h>
 #include <util/delay.h>
-#include <stdint.h>
 #include "display.h"
 
 // Delay after each instruction
-#define DELAY_BUSY 2
+#define DELAY_BUSY 50
 
 // --------------------------------------------------
 
 // RGB PWM values (0 ~ 100)
-volatile uint8_t rgb_pwm_share_red, rgb_pwm_share_green,
-rgb_pwm_share_blue;
+volatile uint8_t pwm_rgb_red, pwm_rgb_green, pwm_rgb_blue;
 volatile uint8_t rgb_incr_color;
 volatile uint8_t rgb_incr_color_val;
 
@@ -20,9 +18,9 @@ volatile uint8_t rgb_incr_color_val;
 void display_init() {
 
   // Initialize variables
-  rgb_pwm_share_red = 0;
-  rgb_pwm_share_green = 0;
-  rgb_pwm_share_blue = 0;
+  pwm_rgb_red = 0;
+  pwm_rgb_green = 0;
+  pwm_rgb_blue = 0;
   rgb_incr_color = 0;
   rgb_incr_color_val = PWM_MAX;
 
@@ -111,7 +109,7 @@ void display_clear() {
 
 // --------------------------------------------------
 
-void display_write_char(unsigned int code) {
+void display_write_char(uint8_t code) {
 
   // 8-bit character codes
   code %= 256;
@@ -206,25 +204,25 @@ void display_write_char(unsigned int code) {
 
 // --------------------------------------------------
 
-void display_write_number(unsigned int number) {
+void display_write_number(uint64_t number) {
 
-  unsigned int i;
+  uint16_t i;
 
-  unsigned int length = 0;
-  unsigned int number_copy = number;
+  uint16_t length = 0;
+  uint64_t number_copy = number;
   while(number_copy > 0) {
     length++;
     number_copy /= 10;
   }
   length = length == 0 ? 1 : length;
 
-  unsigned int curr_digit;
-  unsigned int divisor = 1;
+  uint8_t curr_digit;
+  uint64_t divisor = 1;
   for(i = 0; i < length - 1; i++) {
     divisor *= 10;
   }
   for(i = 0; i < length; i++) {
-    curr_digit = (unsigned int) ((number / divisor) % 10);
+    curr_digit = (number / divisor) % 10;
     display_write_char(0x30 + curr_digit);
     divisor /= 10;
   }
@@ -233,9 +231,9 @@ void display_write_number(unsigned int number) {
 
 // --------------------------------------------------
 
-void display_place_cursor(unsigned int row, unsigned int col) {
+void display_place_cursor(uint16_t row, uint16_t col) {
 
-  unsigned int index = (0x40 * row) + col;
+  uint16_t index = (0x40 * row) + col;
 
   // Enable: rising edge
   PORTB |= (1 << PORTB3);
@@ -323,50 +321,15 @@ void display_place_cursor(unsigned int row, unsigned int col) {
 
 // --------------------------------------------------
 
-void display_pwm(unsigned int pwm) {
+void display_set_backlight_rgb(uint8_t red, uint8_t green, uint8_t blue) {
 
-  // Update backlight RGB
-  if(pwm) {
-    if(pwm - 1 == rgb_pwm_share_red) {
-      PORTD &= ~(1 << PORTD6);
-    }
-    if(pwm - 1 == rgb_pwm_share_green) {
-      PORTD &= ~(1 << PORTD5);
-    }
-    if(pwm - 1 == rgb_pwm_share_blue) {
-      PORTD &= ~(1 << PORTD3);
-    }
-  } else {
-    if(rgb_pwm_share_red) {
-      PORTD |= (1 << PORTD6);
-    }
-    else {
-      PORTD &= ~(1 << PORTD6);
-    }
-    if(rgb_pwm_share_green) {
-      PORTD |= (1 << PORTD5);
-    }
-    else {
-      PORTD &= ~(1 << PORTD5);
-    }
-    if(rgb_pwm_share_blue) {
-      PORTD |= (1 << PORTD3);
-    }
-    else {
-      PORTD &= ~(1 << PORTD3);
-    }
-  }
+  pwm_rgb_red = red;
+  pwm_rgb_green = green;
+  pwm_rgb_blue = blue;
 
-}
-
-// --------------------------------------------------
-
-void display_set_backlight_rgb(unsigned int rgb_red, unsigned int rgb_green,
-unsigned int rgb_blue) {
-
-  rgb_pwm_share_red = rgb_red > PWM_MAX ? PWM_MAX : rgb_red;
-  rgb_pwm_share_green = rgb_green > PWM_MAX ? PWM_MAX : rgb_green;
-  rgb_pwm_share_blue = rgb_blue > PWM_MAX ? PWM_MAX : rgb_blue;
+  OCR0A = pwm_rgb_red;
+  OCR0B = pwm_rgb_green;
+  OCR2B = pwm_rgb_blue;
 
 }
 

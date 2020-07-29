@@ -16,21 +16,21 @@
  * - Backlight RGB blue: pin 3 (PD3)
  */
 
+#include <stdint.h>
+
 // --------------------------------------------------
 
 void display_init();
 
 void display_clear();
 
-void display_write_char(unsigned int);
+void display_write_char(uint8_t);
 
-void display_write_number(unsigned int);
+void display_write_number(uint64_t);
 
-void display_place_cursor(unsigned int, unsigned int);
+void display_place_cursor(uint16_t, uint16_t);
 
-void display_pwm(unsigned int);
-
-void display_set_backlight_rgb(unsigned int, unsigned int, unsigned int);
+void display_set_backlight_rgb(uint8_t, uint8_t, uint8_t);
 
 void display_backlight_rgb_trans();
 

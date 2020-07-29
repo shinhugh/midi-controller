@@ -3,7 +3,6 @@
 #include "common.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <avr/sleep.h>
 #include <util/delay.h>
 #include <stdint.h>
 #include "display.h"
@@ -21,9 +20,9 @@
  * - Data line d6: PB0
  * - Data line d5: PB1
  * - Data line d4: PB2
- * - Backlight RGB red: PD6
- * - Backlight RGB green: PD5
- * - Backlight RGB blue: PD3
+ * - Backlight RGB red: PD6, OC0A
+ * - Backlight RGB green: PD5, OC0B
+ * - Backlight RGB blue: PD3, OC2B
  *
  * Arcade button
  * - Press: PD2
@@ -34,84 +33,41 @@
 // Delay period at the very beginning of program
 #define DELAY_INIT 100
 
-// Width of PWM slot, given in log of number of timer overflows
-#define OVF_WIDTH_PWM 0
+// Clock ticks per timer1 overflow
+#define TIMER1_LEN 16000U
 
 // --------------------------------------------------
 
-// Flag set when timer0 overflow handler is running, to avoid stack overflow
-volatile uint8_t timer0_ovf_handler_process;
+// Lock on timer0 overflow handler
+volatile uint8_t lock_timer0_ovf;
 
-// Timer1 overflow counter
-volatile uint32_t timer1_ovf_count;
+// Elapsed time in milliseconds
+volatile uint64_t elapsed_ms;
 
-// Quantization value for elapsed time
-volatile uint8_t snap_curr_elapsed_s, snap_last_elapsed_s;
-// Elapsed time in seconds
-volatile uint64_t elapsed_s;
-
-// Quantization value for PWM
-volatile uint8_t snap_curr_pwm, snap_last_pwm;
-// PWM index
-volatile uint8_t pwm;
-
-// DEBUG START
-volatile uint32_t pwm_cycle_count;
-volatile uint8_t timer0_ovf_handled_count;
-// DEBUG FINISH
+// Samples of elapsed time
+volatile uint8_t time_sample_curr_rgb;
+volatile uint8_t time_sample_last_rgb;
 
 // --------------------------------------------------
 
 // Interrupt handler for timer0 overflow
 ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
 
-  if(!timer0_ovf_handler_process) {
+  // Check lock on interrupt handler
+  if(!lock_timer0_ovf) {
 
-    // Prevent nested interrupts for this handler
-    timer0_ovf_handler_process = 1;
+    // Lock interrupt handler
+    lock_timer0_ovf = 1;
 
-    // ----------------------------------------
-
-    // Update PWM slot index
-    snap_curr_pwm = timer1_ovf_count; // >> OVF_WIDTH_PWM
-    if(snap_curr_pwm != snap_last_pwm) {
-      pwm++;
-      snap_last_pwm = snap_curr_pwm;
-
-      // DEBUG START
-      if(!pwm) {
-        pwm_cycle_count++;
-      }
-      // DEBUG FINISH
+    // Transition display backlight RGB
+    time_sample_curr_rgb = elapsed_ms;
+    if(time_sample_curr_rgb != time_sample_last_rgb) {
+      display_backlight_rgb_trans();
     }
+    time_sample_last_rgb = time_sample_curr_rgb;
 
-    // ----------------------------------------
-
-    // Update elapsed seconds
-    snap_curr_elapsed_s = (timer1_ovf_count << 16) / F_CPU;
-    if(snap_curr_elapsed_s != snap_last_elapsed_s) {
-      elapsed_s++;
-      snap_last_elapsed_s = snap_curr_elapsed_s;
-    }
-
-    // ----------------------------------------
-
-    // Update PWM output for display backlight RGB
-//    display_pwm(pwm);
-
-    // ----------------------------------------
-
-    // DEBUG START
-    if((timer0_ovf_handled_count >> 7) & 0x01) {
-      PORTB |= (1 << PORTB5);
-    } else {
-      PORTB &= ~(1 << PORTB5);
-    }
-    timer0_ovf_handled_count++;
-    // DEBUG FINISH
-
-    // Release lock on future instances of this handler
-    timer0_ovf_handler_process = 0;
+    // Unlock interrupt handler
+    lock_timer0_ovf = 0;
 
   }
 
@@ -119,11 +75,11 @@ ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
 
 // --------------------------------------------------
 
-// Interrupt handler for timer1 overflow
-ISR(TIMER1_OVF_vect, ISR_BLOCK) {
+// Interrupt handler for timer1 compare match
+ISR(TIMER1_COMPA_vect, ISR_NOBLOCK) {
 
-  // Increment timer overflow counter
-  timer1_ovf_count++;
+  // Increment elapsed time
+  elapsed_ms++;
 
 }
 
@@ -138,35 +94,33 @@ int main() {
   // ----------------------------------------
 
   // Initialize global variables
-  timer0_ovf_handler_process = 0;
-  timer1_ovf_count = 0;
-  snap_curr_elapsed_s = 0;
-  snap_last_elapsed_s = 0;
-  elapsed_s = 0;
-  snap_curr_pwm = 0;
-  snap_last_pwm = 0;
-  pwm = 0;
+  lock_timer0_ovf = 0;
+  elapsed_ms = 0;
+  time_sample_curr_rgb = 0;
+  time_sample_last_rgb = 0;
 
-  // DEBUG START
-  pwm_cycle_count = 0;
-  timer0_ovf_handled_count = 0;
-  // DEBUG FINISH
+  // ----------------------------------------
+
+  // Configure and enable timers
+  TCNT0 = 0;
+  TCCR0A = (1 << COM0A1) | (1 << COM0B1) | (1 << WGM01) | (1 << WGM00);
+  TCCR0B = (1 << CS00);
+  OCR0A = 0;
+  OCR0B = 0;
+  TCNT1 = 0;
+  OCR1A = TIMER1_LEN - 1;
+  TCCR1B = (1 << WGM12) | (1 << CS10);
+  TIMSK1 = (1 << OCIE1A);
+  TCNT2 = 0;
+  TCCR2A = (1 << COM2B1) | (1 << WGM21) | (1 << WGM20);
+  TCCR2B = (1 << CS20);
+  OCR2B = 0;
 
   // ----------------------------------------
 
   // Set pin directions
   DDRD &= ~(1 << DDD2);
   DDRB |= (1 << DDB5);
-
-  // ----------------------------------------
-
-  // Configure and enable timers
-  TCNT0 = 0;
-  TCCR0B = (1 << CS02);
-  TIMSK0 = (1 << TOIE0);
-  TCNT1 = 0;
-  TCCR1B = (1 << CS10);
-  TIMSK1 = (1 << TOIE1);
 
   // ----------------------------------------
 
@@ -181,26 +135,13 @@ int main() {
   // ----------------------------------------
 
   // Configure display
-//  display_set_backlight_rgb(10, 10, 10);
+  display_set_backlight_rgb(PWM_MAX, PWM_MAX, PWM_MAX);
   display_clear();
 
   // ----------------------------------------
 
-  // DEBUG START
-  PORTD |= (1 << PORTD6);
-  PORTD |= (1 << PORTD5);
-  PORTD |= (1 << PORTD3);
-  // DEBUG FINISH
-
   // Stack variables
   // TODO
-
-  // DEBUG START
-  display_place_cursor(0, 0);
-  display_write_number(elapsed_s);
-  display_place_cursor(1, 0);
-  display_write_number(pwm_cycle_count);
-  // DEBUG FINISH
 
   // ----------------------------------------
 
@@ -209,12 +150,9 @@ int main() {
 
     // Print elapsed seconds
     display_place_cursor(0, 0);
-    display_write_number(elapsed_s);
-
-    // DEBUG START
-    display_place_cursor(1, 0);
-    display_write_number(pwm_cycle_count);
-    // DEBUG FINISH
+    display_write_number(elapsed_ms / 1000);
+    // display_write_char(0x48);
+    // display_write_char(0x69);
 
   }
 
