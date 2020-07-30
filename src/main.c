@@ -31,18 +31,37 @@
 // --------------------------------------------------
 
 // Delay period at the very beginning of program
-#define DELAY_INIT 100
+#define DELAY_INIT 1000U
+
+// Bitmask to apply on timer0 overflow counter to limit handler frequency
+#define MASK_TIMER0_OVF_COUNT 0x0fU
 
 // Clock ticks per timer1 overflow
 #define TIMER1_LEN 16000U
+
+// Duration that new button press state must hold to be acknowledged
+#define BUTTON_HOLD_ACK 32U
+
+// Bitmask to apply on custom button press counter to compare with global one
+#define MASK_BUTTON_PRESS_COUNT 0xffU
 
 // --------------------------------------------------
 
 // Lock on timer0 overflow handler
 volatile uint8_t lock_timer0_ovf;
 
+// Number of timer0 overflows
+volatile uint8_t count_timer0_ovf;
+
 // Elapsed time in milliseconds
 volatile uint64_t elapsed_ms;
+
+// Button press state
+volatile uint8_t button_press_state;
+// Duration that a different button state has held for
+volatile uint8_t button_hold_curr;
+// Number of acknowledged button presses thus far (serves as a global queue)
+volatile uint8_t button_press_count;
 
 // Samples of elapsed time
 volatile uint8_t time_sample_curr_rgb;
@@ -59,17 +78,47 @@ ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
     // Lock interrupt handler
     lock_timer0_ovf = 1;
 
-    // Transition display backlight RGB
-    time_sample_curr_rgb = elapsed_ms;
-    if(time_sample_curr_rgb != time_sample_last_rgb) {
-      display_backlight_rgb_trans();
+    // Decrease frequency of handler code execution
+    if(!(count_timer0_ovf & MASK_TIMER0_OVF_COUNT)) {
+
+      // Update button press state
+      if(!(PIND & (1 << PIND2)) ^ button_press_state) {
+        if(button_hold_curr >= BUTTON_HOLD_ACK) {
+          button_press_state = !button_press_state;
+          button_hold_curr = 0;
+          if(button_press_state) {
+            button_press_count++;
+          }
+        } else {
+          button_hold_curr++;
+        }
+      } else {
+        button_hold_curr = 0;
+      }
+
+      // Blink LED every second
+      if((elapsed_ms / 500) & 0x01) {
+        PORTB &= ~(1 << PORTB5);
+      } else {
+        PORTB |= (1 << PORTB5);
+      }
+
+      // Transition display backlight RGB
+      time_sample_curr_rgb = elapsed_ms;
+      if(time_sample_curr_rgb != time_sample_last_rgb) {
+        display_backlight_rgb_trans();
+      }
+      time_sample_last_rgb = time_sample_curr_rgb;
+
     }
-    time_sample_last_rgb = time_sample_curr_rgb;
 
     // Unlock interrupt handler
     lock_timer0_ovf = 0;
 
   }
+
+  // Increment overflow counter
+  count_timer0_ovf++;
 
 }
 
@@ -95,9 +144,13 @@ int main() {
 
   // Initialize global variables
   lock_timer0_ovf = 0;
+  count_timer0_ovf = 0;
   elapsed_ms = 0;
   time_sample_curr_rgb = 0;
   time_sample_last_rgb = 0;
+  button_press_state = 0;
+  button_hold_curr = 0;
+  button_press_count = 0;
 
   // ----------------------------------------
 
@@ -105,6 +158,7 @@ int main() {
   TCNT0 = 0;
   TCCR0A = (1 << COM0A1) | (1 << COM0B1) | (1 << WGM01) | (1 << WGM00);
   TCCR0B = (1 << CS00);
+  TIMSK0 = (1 << TOIE0);
   OCR0A = 0;
   OCR0B = 0;
   TCNT1 = 0;
@@ -135,13 +189,15 @@ int main() {
   // ----------------------------------------
 
   // Configure display
+  // display_backlight_rgb_trans_on();
+  display_backlight_rgb_trans_off();
   display_set_backlight_rgb(PWM_MAX, PWM_MAX, PWM_MAX);
   display_clear();
 
   // ----------------------------------------
 
   // Stack variables
-  // TODO
+  uint32_t button_press_count_print = 0;
 
   // ----------------------------------------
 
@@ -150,9 +206,15 @@ int main() {
 
     // Print elapsed seconds
     display_place_cursor(0, 0);
-    display_write_number(elapsed_ms / 1000);
-    // display_write_char(0x48);
-    // display_write_char(0x69);
+    display_write_number(elapsed_ms / 1000U);
+
+    // Print button press count
+    while((button_press_count_print & MASK_BUTTON_PRESS_COUNT)
+    != button_press_count) {
+      button_press_count_print++;
+    }
+    display_place_cursor(1, 0);
+    display_write_number(button_press_count_print);
 
   }
 

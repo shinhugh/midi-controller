@@ -9,7 +9,7 @@
 #define F_CPU 16000000UL
 
 // PWM duty cycle maximum value
-#define PWM_MAX 255
+#define PWM_MAX 255U
 
 // --------------------------------------------------
 

@@ -34,6 +34,10 @@ void display_set_backlight_rgb(uint8_t, uint8_t, uint8_t);
 
 void display_backlight_rgb_trans();
 
+void display_backlight_rgb_trans_on();
+
+void display_backlight_rgb_trans_off();
+
 // --------------------------------------------------
 
 #endif
