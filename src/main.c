@@ -198,6 +198,7 @@ int main() {
 
   // Stack variables
   uint32_t button_press_count_print = 0;
+  uint8_t display_backlight_on = 1;
 
   // ----------------------------------------
 
@@ -205,12 +206,19 @@ int main() {
   while(1) {
 
     // Print elapsed seconds
-    display_place_cursor(0, 0);
-    display_write_number(elapsed_ms / 1000U);
+    // display_place_cursor(0, 0);
+    // display_write_number(elapsed_ms / 1000U);
 
     // Print button press count
     while((button_press_count_print & MASK_BUTTON_PRESS_COUNT)
     != button_press_count) {
+      if(display_backlight_on) {
+        display_set_backlight_rgb(0, 0, 0);
+        display_backlight_on = !display_backlight_on;
+      } else {
+        display_set_backlight_rgb(PWM_MAX, PWM_MAX, PWM_MAX);
+        display_backlight_on = !display_backlight_on;
+      }
       button_press_count_print++;
     }
     display_place_cursor(1, 0);
