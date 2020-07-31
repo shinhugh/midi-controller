@@ -5,6 +5,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <stdint.h>
+#include "serial.h"
 #include "display.h"
 
 // --------------------------------------------------
@@ -32,6 +33,9 @@
 
 // Delay period at the very beginning of program
 #define DELAY_INIT 1000U
+
+// Serial communication baud rate
+#define BAUD_SERIAL 9600
 
 // Bitmask to apply on timer0 overflow counter to limit handler frequency
 #define MASK_TIMER0_OVF_COUNT 0x0fU
@@ -96,19 +100,14 @@ ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
         button_hold_curr = 0;
       }
 
-      // Blink LED every second
-      if((elapsed_ms / 500) & 0x01) {
-        PORTB &= ~(1 << PORTB5);
-      } else {
-        PORTB |= (1 << PORTB5);
-      }
-
+      /*
       // Transition display backlight RGB
       time_sample_curr_rgb = elapsed_ms;
       if(time_sample_curr_rgb != time_sample_last_rgb) {
         display_backlight_rgb_trans();
       }
       time_sample_last_rgb = time_sample_curr_rgb;
+      */
 
     }
 
@@ -172,6 +171,13 @@ int main() {
 
   // ----------------------------------------
 
+  // Initialize USART
+  UBRR0L = (uint8_t) 103;
+  UCSR0B = (1 << TXEN0); // | (1 << RXEN0);
+  UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
+
+  // ----------------------------------------
+
   // Set pin directions
   DDRD &= ~(1 << DDD2);
   DDRB |= (1 << DDB5);
@@ -198,7 +204,6 @@ int main() {
 
   // Stack variables
   uint32_t button_press_count_print = 0;
-  uint8_t display_backlight_on = 1;
 
   // ----------------------------------------
 
@@ -212,14 +217,10 @@ int main() {
     // Print button press count
     while((button_press_count_print & MASK_BUTTON_PRESS_COUNT)
     != button_press_count) {
-      if(display_backlight_on) {
-        display_set_backlight_rgb(0, 0, 0);
-        display_backlight_on = !display_backlight_on;
-      } else {
-        display_set_backlight_rgb(PWM_MAX, PWM_MAX, PWM_MAX);
-        display_backlight_on = !display_backlight_on;
-      }
       button_press_count_print++;
+      serial_print_string("Button press count: ");
+      serial_print_number(button_press_count_print);
+      serial_print_newline();
     }
     display_place_cursor(1, 0);
     display_write_number(button_press_count_print);

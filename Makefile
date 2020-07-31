@@ -41,10 +41,11 @@ default:
 compile:
 
 	@echo "Compiling."
-	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/display.o $(PATH_SRC)/display.c
 	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/main.o $(PATH_SRC)/main.c
+	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/serial.o $(PATH_SRC)/serial.c
+	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/display.o $(PATH_SRC)/display.c
 	@$(CC) $(LFLAGS) -o $(PATH_BUILD)/program $(PATH_BUILD)/main.o \
-$(PATH_BUILD)/display.o
+$(PATH_BUILD)/serial.o $(PATH_BUILD)/display.o
 	@$(OC) $(OCFLAGS) $(PATH_BUILD)/program $(PATH_BUILD)/program.hex
 
 # --------------------------------------------------
