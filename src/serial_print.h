@@ -1,7 +1,7 @@
 // Serial communication via RX/TX ports
 
-#ifndef SERIAL_H
-#define SERIAL_H
+#ifndef SERIAL_PRINT_H
+#define SERIAL_PRINT_H
 
 #include <stdint.h>
 

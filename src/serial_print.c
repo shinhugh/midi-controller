@@ -1,6 +1,6 @@
 #include "common.h"
 #include <avr/io.h>
-#include "serial.h"
+#include "serial_print.h"
 
 // ASCII offset for numbers
 #define CHAR_NUMERIC_OFFSET 0x30U

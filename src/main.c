@@ -5,7 +5,8 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <stdint.h>
-#include "serial.h"
+#include "midi.h"
+#include "serial_print.h"
 #include "display.h"
 
 // --------------------------------------------------
@@ -31,11 +32,11 @@
 
 // --------------------------------------------------
 
+// Bitmask with least significant 8 bits
+#define MASK_LSB 0xffU
+
 // Delay period at the very beginning of program
 #define DELAY_INIT 1000U
-
-// Serial communication baud rate
-#define BAUD_SERIAL 9600
 
 // Bitmask to apply on timer0 overflow counter to limit handler frequency
 #define MASK_TIMER0_OVF_COUNT 0x0fU
@@ -43,11 +44,11 @@
 // Clock ticks per timer1 overflow
 #define TIMER1_LEN 16000U
 
+// Number of buttons
+#define BUTTON_CONNECTIONS 1
+
 // Duration that new button press state must hold to be acknowledged
 #define BUTTON_HOLD_ACK 32U
-
-// Bitmask to apply on custom button press counter to compare with global one
-#define MASK_BUTTON_PRESS_COUNT 0xffU
 
 // --------------------------------------------------
 
@@ -61,11 +62,13 @@ volatile uint8_t count_timer0_ovf;
 volatile uint64_t elapsed_ms;
 
 // Button press state
-volatile uint8_t button_press_state;
+volatile uint8_t button_press_state[BUTTON_CONNECTIONS];
 // Duration that a different button state has held for
-volatile uint8_t button_hold_curr;
+volatile uint8_t button_hold_curr[BUTTON_CONNECTIONS];
 // Number of acknowledged button presses thus far (serves as a global queue)
-volatile uint8_t button_press_count;
+volatile uint8_t button_press_count[BUTTON_CONNECTIONS];
+// Number of acknowledged button releases thus far (serves as a global queue)
+volatile uint8_t button_release_count[BUTTON_CONNECTIONS];
 
 // Samples of elapsed time
 volatile uint8_t time_sample_curr_rgb;
@@ -85,19 +88,25 @@ ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
     // Decrease frequency of handler code execution
     if(!(count_timer0_ovf & MASK_TIMER0_OVF_COUNT)) {
 
-      // Update button press state
-      if(!(PIND & (1 << PIND2)) ^ button_press_state) {
-        if(button_hold_curr >= BUTTON_HOLD_ACK) {
-          button_press_state = !button_press_state;
-          button_hold_curr = 0;
-          if(button_press_state) {
-            button_press_count++;
+      for(uint16_t button_index = 0; button_index < BUTTON_CONNECTIONS;
+      button_index++) {
+        // Update button press state
+        if(!(PIND & (1 << PIND2)) ^ button_press_state[button_index]) {
+          if(button_hold_curr[button_index] >= BUTTON_HOLD_ACK) {
+            button_press_state[button_index]
+            = !button_press_state[button_index];
+            button_hold_curr[button_index] = 0;
+            if(button_press_state[button_index]) {
+              button_press_count[button_index]++;
+            } else {
+              button_release_count[button_index]++;
+            }
+          } else {
+            button_hold_curr[button_index]++;
           }
         } else {
-          button_hold_curr++;
+          button_hold_curr[button_index] = 0;
         }
-      } else {
-        button_hold_curr = 0;
       }
 
       /*
@@ -147,9 +156,13 @@ int main() {
   elapsed_ms = 0;
   time_sample_curr_rgb = 0;
   time_sample_last_rgb = 0;
-  button_press_state = 0;
-  button_hold_curr = 0;
-  button_press_count = 0;
+  for(uint16_t button_index = 0; button_index < BUTTON_CONNECTIONS;
+  button_index++) {
+    button_press_state[button_index] = 0;
+    button_hold_curr[button_index] = 0;
+    button_press_count[button_index] = 0;
+    button_release_count[button_index] = 0;
+  }
 
   // ----------------------------------------
 
@@ -172,6 +185,7 @@ int main() {
   // ----------------------------------------
 
   // Initialize USART
+  // Baud: 103 for 9600, 31 for 31250
   UBRR0L = (uint8_t) 103;
   UCSR0B = (1 << TXEN0); // | (1 << RXEN0);
   UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
@@ -203,7 +217,13 @@ int main() {
   // ----------------------------------------
 
   // Stack variables
-  uint32_t button_press_count_print = 0;
+  uint8_t button_on_count[BUTTON_CONNECTIONS];
+  uint8_t button_off_count[BUTTON_CONNECTIONS];
+  for(uint16_t button_index = 0; button_index < BUTTON_CONNECTIONS;
+  button_index++) {
+    button_on_count[button_index] = 0;
+    button_off_count[button_index] = 0;
+  }
 
   // ----------------------------------------
 
@@ -214,16 +234,33 @@ int main() {
     // display_place_cursor(0, 0);
     // display_write_number(elapsed_ms / 1000U);
 
-    // Print button press count
-    while((button_press_count_print & MASK_BUTTON_PRESS_COUNT)
-    != button_press_count) {
-      button_press_count_print++;
-      serial_print_string("Button press count: ");
-      serial_print_number(button_press_count_print);
-      serial_print_newline();
+    // Button-triggered MIDI
+    while(1) {
+      uint8_t break_condition = 1;
+      for(uint16_t button_index = 0; button_index < BUTTON_CONNECTIONS;
+      button_index++) {
+        if(button_on_count[button_index] != button_press_count[button_index]) {
+          button_on_count[button_index]++;
+          break_condition = 0;
+          midi_note_on(0, 127);
+        }
+        if(button_off_count[button_index]
+        != button_release_count[button_index]) {
+          button_off_count[button_index]++;
+          break_condition = 0;
+          midi_note_off(0);
+        }
+      }
+      if(break_condition) {
+        break;
+      }
     }
+
+    // Display button press/release counts on LED display
     display_place_cursor(1, 0);
-    display_write_number(button_press_count_print);
+    display_write_number(button_on_count[0]);
+    display_place_cursor(1, 8);
+    display_write_number(button_off_count[0]);
 
   }
 
