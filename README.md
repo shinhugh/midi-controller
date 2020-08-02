@@ -12,10 +12,10 @@ of FL Studio's performance mode.
 **Basic diagram**: Buttons -> 328p -> 16U2 -> Host PC
 
 **328p**: Logic to handle hardware interaction and output the corresponding MIDI
-events via serial.
+events via serial (TTL).
 
-**16U2**: [Hiduino](https://github.com/ddiakopoulos/hiduino) as a serial
-to USB converter (USB MIDI class-compliant device).
+**16U2**: [Hiduino](https://github.com/ddiakopoulos/hiduino) as a TTL to USB
+converter (USB MIDI class-compliant device).
 
 [8/02/2020]
 ![Update photo](/update_photo.jpg)
