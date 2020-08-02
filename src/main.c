@@ -59,10 +59,10 @@ ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
     button_state_pre[0] |= (1 << 0);
   }
 
-  // TODO: Instead of internal timer interrupts, use interrupts from external
-  // I/O expander, notified when external I/O ports change value
-
 }
+
+// TODO: Instead of internal timer interrupts, use interrupts from external
+// I/O expander, notified when external I/O ports change value
 
 // --------------------------------------------------
 
@@ -130,6 +130,7 @@ int main() {
 
   // Stack variables
 
+  // Loop counter
   uint8_t loop_count = 0;
 
   // DEBUG START
@@ -148,6 +149,7 @@ int main() {
 
     // Infrequent code
 
+    // Once every 64 loop iterations
     if(!(loop_count & 0x3f)) {
       // DEBUG START
       display_place_cursor(0, 0);
@@ -215,7 +217,7 @@ int main() {
           ) {
             // Clear unacknowledged state
             button_unack_data[button_index] = 0;
-            // Flip button state
+            // Flip button state and generate MIDI event
             if(curr_bit) {
               button_state[byte_index] &= ~(1 << bit_index);
               uint8_t note = ((button_index / 6) * 13) + (button_index % 6);
@@ -226,7 +228,6 @@ int main() {
               serial_print_newline(); // DEBUG
               midi_note_off(note);
               serial_print_newline(); // DEBUG
-              // TODO: Generate MIDI Note Off via serial for relevant note
             } else {
               button_state[byte_index] |= (1 << bit_index);
               uint8_t note = ((button_index / 6) * 13) + (button_index % 6);
@@ -238,7 +239,6 @@ int main() {
               serial_print_newline(); // DEBUG
               midi_note_on(note, 127);
               serial_print_newline(); // DEBUG
-              // TODO: Generate MIDI Note On via serial for relevant note
             }
           }
 
@@ -255,6 +255,7 @@ int main() {
 
     // ----------------------------------------
 
+    // Increment loop counter
     loop_count++;
 
   }
