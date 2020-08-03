@@ -19,7 +19,7 @@
 // Clock ticks per timer1 overflow
 #define TIMER1_LEN 16000
 
-// Number of buttons
+// Number of buttons (60, round up to multiple of 8)
 #define BUTTON_COUNT 64
 
 // Number of bytes used to hold button states
@@ -62,7 +62,7 @@ ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
 }
 
 // TODO: Instead of internal timer interrupts, use interrupts from external
-// I/O expander, notified when external I/O ports change value
+//       I/O expander, notified when external I/O ports change value
 
 // --------------------------------------------------
 
@@ -151,14 +151,7 @@ int main() {
 
     // Once every 64 loop iterations
     if(!(loop_count & 0x3f)) {
-      // DEBUG START
-      display_place_cursor(0, 0);
-      display_write_number(button_state[0] & 0x01);
-      display_place_cursor(0, 3);
-      display_write_number(button_state_pre[0] & 0x01);
-      display_place_cursor(1, 0);
-      display_write_number(press_count);
-      // DEBUG FINISH
+
     }
 
     // ----------------------------------------
