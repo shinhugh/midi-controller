@@ -47,8 +47,12 @@ volatile uint8_t button_state[BUTTON_STATE_BYTES];
 // Bit[5:0]: Start time of unacknowledged state
 volatile uint8_t button_unack_data[BUTTON_COUNT];
 
+// Whether a TWI operation is ongoing
+volatile uint8_t twi_ongoing;
+
 // --------------------------------------------------
 
+/*
 // Interrupt handler for timer0 overflow
 ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
 
@@ -60,6 +64,7 @@ ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
   }
 
 }
+*/
 
 // TODO: Instead of internal timer interrupts, use interrupts from external
 //       I/O expander, notified when external I/O ports change value
@@ -71,6 +76,71 @@ ISR(TIMER1_COMPA_vect, ISR_NOBLOCK) {
 
   // Increment elapsed time
   elapsed_ms++;
+
+}
+
+// --------------------------------------------------
+
+// Interrupt handler for TWI
+ISR(TWI_vect, ISR_NOBLOCK) {
+
+  // DEBUG START
+  PORTB |= (1 << PORTB5);
+  serial_print_string("BINGO");
+  serial_print_newline();
+  TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
+  // DEBUG FINISH
+
+/*
+
+  uint8_t twi_status = TWSR & 0xf8;
+
+  if(twi_status == 0x08) {
+    // START condition has been transmitted
+    serial_print_string("TWI interrupt: 0x08"); // DEBUG
+    // Specify slave address + read mode
+    TWDR = 0x40 | (0 << 1) | 0x01;
+    TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
+  } else if(twi_status == 0x10) {
+    // A repeated START condition has been transmitted
+    serial_print_string("TWI interrupt: 0x10"); // DEBUG
+    // Specify slave address + read mode
+    TWDR = 0x40 | (0 << 1) | 0x01;
+    TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
+  } else if(twi_status == 0x38) {
+    // Arbitration lost in SLA+R, or NACK bit received
+    serial_print_string("TWI interrupt: 0x38"); // DEBUG
+    // Transmit another START condition
+    TWCR = (1 << TWINT) | (1 << TWSTA)| (1 << TWEN) | (1 << TWIE);
+  } else if(twi_status == 0x40) {
+    // SLA+R transmitted, ACK received
+    serial_print_string("TWI interrupt: 0x40"); // DEBUG
+    // Request byte data and transmit NACK upon reception
+    TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
+  } else if(twi_status == 0x48) {
+    // SLA+R transmitted, NACK received
+    serial_print_string("TWI interrupt: 0x48"); // DEBUG
+    // Transmit another START condition
+    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN) | (1 << TWIE);
+  } else if(twi_status == 0x50) {
+    // Data byte received, ACK transmitted
+    serial_print_string("TWI interrupt: 0x50"); // DEBUG
+    // Request byte data and transmit NACK upon reception
+    TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
+  } else if(twi_status == 0x58) {
+    // Data byte received, NACK transmitted
+    serial_print_string("TWI interrupt: 0x58"); // DEBUG
+    // Transmit STOP condition
+    TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN) | (1 << TWIE);
+    twi_ongoing = 0;
+  } else {
+    // Unrecognized status
+    serial_print_string("TWI interrupt: Unrecognized"); // DEBUG
+  }
+
+  serial_print_newline(); // DEBUG
+
+*/
 
 }
 
@@ -92,13 +162,11 @@ int main() {
   for(uint8_t i = 0; i < BUTTON_COUNT; i++) {
     button_unack_data[i];
   }
+  twi_ongoing = 0;
 
   // ----------------------------------------
 
   // Configure and enable timers
-  TCNT0 = 0;
-  TCCR0B = (1 << CS02);
-  TIMSK0 = (1 << TOIE0);
   TCNT1 = 0;
   OCR1A = TIMER1_LEN - 1;
   TCCR1B = (1 << WGM12) | (1 << CS10);
@@ -113,10 +181,14 @@ int main() {
 
   // ----------------------------------------
 
-  // Set pin directions
+  // Initialize TWI (I2C)
+  TWBR = 72;
+  PORTC |= (1 << PORTC4);
+  PORTC |= (1 << PORTC5);
 
-  // Button
-  DDRD &= ~(1 << DDD2);
+  // ----------------------------------------
+
+  // Set pin directions
 
   // Built-in LED
   DDRB |= (1 << DDB5);
@@ -133,6 +205,10 @@ int main() {
   // Loop counter
   uint8_t loop_count = 0;
 
+  // ----------------------------------------
+
+  // One-time routine
+
   // DEBUG START
   display_init();
   display_clear();
@@ -140,6 +216,24 @@ int main() {
   PORTD |= (1 << PORTD5);
   PORTD |= (1 << PORTD3);
   uint8_t press_count = 0;
+  // DEBUG FINISH
+
+  // DEBUG START
+  // Generate TWI START
+  PORTB &= ~(1 << PORTB5);
+  serial_print_string("Starting TWI test routine");
+  serial_print_newline();
+  // TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN) | (1 << TWIE);
+  TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
+  while(!(TWCR & (1 << TWINT)));
+  if(TWSR == 0x08) {
+    serial_print_string("START condition transmitted");
+    serial_print_newline();
+  } else {
+    serial_print_string("Error");
+    serial_print_newline();
+  }
+  twi_ongoing = 1;
   // DEBUG FINISH
 
   // ----------------------------------------
