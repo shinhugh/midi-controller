@@ -232,9 +232,7 @@ int main() {
     twi_ongoing = 1;
 
     // Transmit start condition
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x08) {
+    if(twi_transmit_start()) {
       serial_print_string("S transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
@@ -243,64 +241,42 @@ int main() {
 
 
     // Transmit slave address + write
-    TWDR = 0x40 | (0 << 1) | 0x00;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x18) {
+    if(twi_transmit_slaveaddr(0x20, 0)) {
       serial_print_string("SLA transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit register address of IODIRA
-    TWDR = 0x00;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0x00)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit IODIRA value
-    TWDR = 0xff;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0xff)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit restart condition
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x10) {
+    if(twi_transmit_restart()) {
       serial_print_string("RS transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit slave address + write
-    TWDR = 0x40 | (0 << 1) | 0x00;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x18) {
+    if(twi_transmit_slaveaddr(0x20, 0)) {
       serial_print_string("SLA transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit register address of IODIRB
-    TWDR = 0x01;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0x01)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit IODIRB value
-    TWDR = 0xff;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0xff)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit restart condition
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x10) {
+    if(twi_transmit_restart()) {
       serial_print_string("RS transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
@@ -308,64 +284,42 @@ int main() {
 
 
     // Transmit slave address + write
-    TWDR = 0x40 | (0 << 1) | 0x00;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x18) {
+    if(twi_transmit_slaveaddr(0x20, 0)) {
       serial_print_string("SLA transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit register address of GPPUA
-    TWDR = 0x0c;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0x0c)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit GPPUA value
-    TWDR = 0xff;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0xff)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit restart condition
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x10) {
+    if(twi_transmit_restart()) {
       serial_print_string("RS transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit slave address + write
-    TWDR = 0x40 | (0 << 1) | 0x00;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x18) {
+    if(twi_transmit_slaveaddr(0x20, 0)) {
       serial_print_string("SLA transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit register address of GPPUB
-    TWDR = 0x0d;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0x0d)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit GPPUB value
-    TWDR = 0xff;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0xff)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit restart condition
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x10) {
+    if(twi_transmit_restart()) {
       serial_print_string("RS transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
@@ -374,54 +328,45 @@ int main() {
 // FINISH
 
     // Transmit slave address + write
-    TWDR = 0x40 | (0 << 1) | 0x00;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x18) {
+    if(twi_transmit_slaveaddr(0x20, 0)) {
       serial_print_string("SLA transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit register address of IOCON
-    TWDR = 0x0a;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0x0a)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit IOCON value
-    TWDR = 0x20;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0x20)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
+
+// START
+/*
+
     // Transmit restart condition
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x10) {
+    if(twi_transmit_restart()) {
       serial_print_string("RS transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit slave address + write
-    TWDR = 0x40 | (0 << 1) | 0x00;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x18) {
+    if(twi_transmit_slaveaddr(0x20, 0)) {
       serial_print_string("SLA transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
     // Transmit register address of GPIOA
-    TWDR = 0x12;
-    TWCR = (1 << TWINT) | (1 << TWEN);
-    while(!(TWCR & (1 << TWINT)));
-    if(TWSR != 0x28) {
+    if(twi_transmit_data(0x12)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
+
+*/
+// FINISH
+
     // Transmit stop condition
-    TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
+    twi_transmit_stop();
 
     twi_ongoing = 0;
 
@@ -460,111 +405,82 @@ int main() {
       twi_ongoing = 1;
 
       // Transmit start condition
-      TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x08) {
+      if(twi_transmit_start()) {
         serial_print_string("S transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
-
-// START
-/*
-
       // Transmit slave address + write
-      TWDR = 0x40 | (0 << 1) | 0x00;
-      TWCR = (1 << TWINT) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x18) {
+      if(twi_transmit_slaveaddr(0x20, 0)) {
         serial_print_string("SLA transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
+      // Transmit register address of GPIOA
+      if(twi_transmit_data(0x12)) {
+        serial_print_string("Data transmission: Error"); // DEBUG
+        serial_print_newline(); // DEBUG
+      }
       // Transmit restart condition
-      TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x10) {
+      if(twi_transmit_restart()) {
         serial_print_string("RS transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
-
-*/
-// FINISH
-
       // Transmit slave address + read
-      TWDR = 0x40 | (0 << 1) | 0x01;
-      TWCR = (1 << TWINT) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x40) {
+      if(twi_transmit_slaveaddr(0x20, 1)) {
         serial_print_string("SLA transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
       // Proceed to receive data byte, then transmit NACK
-      TWCR = (1 << TWINT) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x58) {
+      if(twi_receive_data_nack(0)) {
         serial_print_string("Data receive: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
       // Update button live states accordingly
-      // TODO
+      button_state_pre[0] = TWDR;
       // DEBUG START
       if(TWDR & 0x01) {
         PORTB |= (1 << PORTB5);
       } else {
         PORTB &= ~(1 << PORTB5);
       }
-      serial_print_string("TWDR: ");
-      serial_print_number(TWDR & 0x01);
-      serial_print_newline();
       // DEBUG FINISH
       // Transmit restart condition
-      TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x10) {
+      if(twi_transmit_restart()) {
         serial_print_string("RS transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
 
-// START
-/*
-
+      /* Unnecessary with register address toggle mode
       // Transmit slave address + write
-      TWDR = 0x40 | (0 << 1) | 0x00;
-      TWCR = (1 << TWINT) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x18) {
+      if(twi_transmit_slaveaddr(0x20, 0)) {
         serial_print_string("SLA transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
+      // Transmit register address of GPIOB
+      if(twi_transmit_data(0x13)) {
+        serial_print_string("Data transmission: Error"); // DEBUG
+        serial_print_newline(); // DEBUG
+      }
       // Transmit restart condition
-      TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x10) {
+      if(twi_transmit_restart()) {
         serial_print_string("RS transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
-
-*/
-// FINISH
+      */
 
       // Transmit slave address + read
-      TWDR = 0x40 | (0 << 1) | 0x01;
-      TWCR = (1 << TWINT) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x40) {
+      if(twi_transmit_slaveaddr(0x20, 1)) {
         serial_print_string("SLA transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
       // Proceed to receive data byte, then transmit NACK
-      TWCR = (1 << TWINT) | (1 << TWEN);
-      while(!(TWCR & (1 << TWINT)));
-      if(TWSR != 0x58) {
+      if(twi_receive_data_nack(0)) {
         serial_print_string("Data receive: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
       // Update button live states accordingly
-      // TODO
+      button_state_pre[1] = TWDR;
       // Transmit stop condition
-      TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
+      twi_transmit_stop();
 
       twi_ongoing = 0;
 
