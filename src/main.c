@@ -220,7 +220,6 @@ int main() {
   PORTD |= (1 << PORTD6);
   PORTD |= (1 << PORTD5);
   PORTD |= (1 << PORTD3);
-  uint8_t press_count = 0;
   // DEBUG FINISH
 
   // Initialize MCP23017
@@ -555,7 +554,6 @@ int main() {
             if(curr_bit) {
               button_state[byte_index] &= ~(1 << bit_index);
               uint8_t note = ((button_index / 6) * 13) + (button_index % 6);
-              serial_print_number(press_count); // DEBUG
               serial_print_newline(); // DEBUG
               serial_print_string("Note Off: "); // DEBUG
               serial_print_number(note); // DEBUG
@@ -565,8 +563,6 @@ int main() {
             } else {
               button_state[byte_index] |= (1 << bit_index);
               uint8_t note = ((button_index / 6) * 13) + (button_index % 6);
-              press_count++; // DEBUG
-              serial_print_number(press_count); // DEBUG
               serial_print_newline(); // DEBUG
               serial_print_string("Note On: "); // DEBUG
               serial_print_number(note); // DEBUG
