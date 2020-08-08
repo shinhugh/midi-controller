@@ -236,10 +236,27 @@ int main() {
       serial_print_string("S transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
+    // Transmit slave address + write
+    if(twi_transmit_slaveaddr(0x20, 0)) {
+      serial_print_string("SLA transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
+    // Transmit register address of IOCON
+    if(twi_transmit_data(0x0a)) {
+      serial_print_string("Data transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
+    // Transmit IOCON value
+    if(twi_transmit_data(0x00)) {
+      serial_print_string("Data transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
 
-// START
-
-
+    // Transmit restart condition
+    if(twi_transmit_restart()) {
+      serial_print_string("RS transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
     // Transmit slave address + write
     if(twi_transmit_slaveaddr(0x20, 0)) {
       serial_print_string("SLA transmission: Error"); // DEBUG
@@ -255,6 +272,7 @@ int main() {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
+    /*
     // Transmit restart condition
     if(twi_transmit_restart()) {
       serial_print_string("RS transmission: Error"); // DEBUG
@@ -270,19 +288,18 @@ int main() {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
+    */
     // Transmit IODIRB value
     if(twi_transmit_data(0xff)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
+
     // Transmit restart condition
     if(twi_transmit_restart()) {
       serial_print_string("RS transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
-
-
-
     // Transmit slave address + write
     if(twi_transmit_slaveaddr(0x20, 0)) {
       serial_print_string("SLA transmission: Error"); // DEBUG
@@ -298,6 +315,7 @@ int main() {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
+    /*
     // Transmit restart condition
     if(twi_transmit_restart()) {
       serial_print_string("RS transmission: Error"); // DEBUG
@@ -313,38 +331,12 @@ int main() {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
+    */
     // Transmit GPPUB value
     if(twi_transmit_data(0xff)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
-    // Transmit restart condition
-    if(twi_transmit_restart()) {
-      serial_print_string("RS transmission: Error"); // DEBUG
-      serial_print_newline(); // DEBUG
-    }
-
-
-// FINISH
-
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x20, 0)) {
-      serial_print_string("SLA transmission: Error"); // DEBUG
-      serial_print_newline(); // DEBUG
-    }
-    // Transmit register address of IOCON
-    if(twi_transmit_data(0x0a)) {
-      serial_print_string("Data transmission: Error"); // DEBUG
-      serial_print_newline(); // DEBUG
-    }
-    // Transmit IOCON value
-    if(twi_transmit_data(0x20)) {
-      serial_print_string("Data transmission: Error"); // DEBUG
-      serial_print_newline(); // DEBUG
-    }
-
-// START
-/*
 
     // Transmit restart condition
     if(twi_transmit_restart()) {
@@ -356,14 +348,38 @@ int main() {
       serial_print_string("SLA transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
-    // Transmit register address of GPIOA
-    if(twi_transmit_data(0x12)) {
+    // Transmit register address of IPOLA
+    if(twi_transmit_data(0x02)) {
       serial_print_string("Data transmission: Error"); // DEBUG
       serial_print_newline(); // DEBUG
     }
-
-*/
-// FINISH
+    // Transmit IPOLA value
+    if(twi_transmit_data(0x00)) {
+      serial_print_string("Data transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
+    /*
+    // Transmit restart condition
+    if(twi_transmit_restart()) {
+      serial_print_string("RS transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
+    // Transmit slave address + write
+    if(twi_transmit_slaveaddr(0x20, 0)) {
+      serial_print_string("SLA transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
+    // Transmit register address of IPOLB
+    if(twi_transmit_data(0x03)) {
+      serial_print_string("Data transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
+    */
+    // Transmit IPOLB value
+    if(twi_transmit_data(0x00)) {
+      serial_print_string("Data transmission: Error"); // DEBUG
+      serial_print_newline(); // DEBUG
+    }
 
     // Transmit stop condition
     twi_transmit_stop();
@@ -388,14 +404,6 @@ int main() {
     }
 
     // ----------------------------------------
-
-    // DEBUG START
-    if(PIND & (1 << PIND2)) {
-      // PORTB |= (1 << PORTB5);
-    } else {
-      // PORTB &= ~(1 << PORTB5);
-    }
-    // DEBUG FINISH
 
     // Frequent code
 
@@ -430,26 +438,20 @@ int main() {
         serial_print_newline(); // DEBUG
       }
       // Proceed to receive data byte, then transmit NACK
-      if(twi_receive_data_nack(0)) {
+      if(twi_receive_data_ack(0)) { // TODO: NACK
         serial_print_string("Data receive: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
+
       // Update button live states accordingly
-      button_state_pre[0] = TWDR;
-      // DEBUG START
-      if(TWDR & 0x01) {
-        PORTB |= (1 << PORTB5);
-      } else {
-        PORTB &= ~(1 << PORTB5);
-      }
-      // DEBUG FINISH
+      button_state_pre[0] = ~TWDR;
+
+      /*
       // Transmit restart condition
       if(twi_transmit_restart()) {
         serial_print_string("RS transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
-
-      /* Unnecessary with register address toggle mode
       // Transmit slave address + write
       if(twi_transmit_slaveaddr(0x20, 0)) {
         serial_print_string("SLA transmission: Error"); // DEBUG
@@ -465,26 +467,37 @@ int main() {
         serial_print_string("RS transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
-      */
-
       // Transmit slave address + read
       if(twi_transmit_slaveaddr(0x20, 1)) {
         serial_print_string("SLA transmission: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
+      */
+
       // Proceed to receive data byte, then transmit NACK
       if(twi_receive_data_nack(0)) {
         serial_print_string("Data receive: Error"); // DEBUG
         serial_print_newline(); // DEBUG
       }
+
       // Update button live states accordingly
-      button_state_pre[1] = TWDR;
+      button_state_pre[1] = ~TWDR;
+
       // Transmit stop condition
       twi_transmit_stop();
 
       twi_ongoing = 0;
 
     }
+
+    // DEBUG START
+    /*
+    serial_print_binary(button_state_pre[0]);
+    serial_print_letter(' ');
+    serial_print_binary(button_state_pre[1]);
+    serial_print_newline();
+    */
+    // DEBUG FINISH
 
     // Iterate through all buttons' live states and update acknowledged states
     for(uint8_t byte_index = 0; byte_index < BUTTON_STATE_BYTES; byte_index++) {
