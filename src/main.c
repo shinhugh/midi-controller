@@ -111,7 +111,7 @@ int main() {
   // ----------------------------------------
 
   // Initialize USART
-  UBRR0L = (uint8_t) 103; // 103 for 9600, 31 for 31250
+  UBRR0L = (uint8_t) 31; // 103 for 9600, 31 for 31250
   UCSR0B = (1 << TXEN0);
   UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 
