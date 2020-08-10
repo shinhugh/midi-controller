@@ -19,7 +19,7 @@ LFLAGS := -mmcu=atmega328p
 OC := avr-objcopy
 OCFLAGS := -O ihex -R .eeprom
 UP := avrdude
-UPFLAGS := -p m328p -c arduino -P /dev/ttyACM0 -F -V
+UPFLAGS := -p m328p -c usbtiny -F -V
 
 # --------------------------------------------------
 
@@ -57,7 +57,7 @@ $(PATH_BUILD)/display.o
 flash:
 
 	@echo "Flashing."
-	@$(UP) $(UPFLAGS) -U flash:w:$(PATH_BUILD)/program.hex
+	@sudo $(UP) $(UPFLAGS) -U flash:w:$(PATH_BUILD)/program.hex
 
 # --------------------------------------------------
 
