@@ -520,13 +520,12 @@ int main() {
             // Clear unacknowledged state
             button_unack_data[button_index] = 0;
             // Flip button state and generate MIDI event
+            uint8_t note = ((button_index / 6) * 12) + (button_index % 6);
             if(curr_bit) {
               button_state[byte_index] &= ~(1 << bit_index);
-              uint8_t note = ((button_index / 6) * 13) + (button_index % 6);
               midi_note_off(note);
             } else {
               button_state[byte_index] |= (1 << bit_index);
-              uint8_t note = ((button_index / 6) * 13) + (button_index % 6);
               midi_note_on(note, 127);
             }
           }
