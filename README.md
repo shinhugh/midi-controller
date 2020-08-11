@@ -8,6 +8,8 @@ Currently in the process of building a MIDI controller. It will mimic the
 needs as a producer. Naturally, this means that the MIDI mapping will fit that
 of FL Studio's performance mode.
 
+As of 8/10/2020, the prototype is complete!
+
 **Basic diagram**: Buttons ->
 [MCP23017](http://ww1.microchip.com/downloads/en/DeviceDoc/20001952C.pdf) ->
 [328P](http://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061A.pdf) ->
@@ -25,5 +27,6 @@ Also includes a basic text LCD with the
 which may or may not be included in the final model. Regardless, it serves as a
 useful debugging tool.
 
-[8/02/2020]
-![Update photo](/update_photo.jpg)
+[8/10/2020]
+![Update photo](/photo_08102020_0.jpg)
+![Update photo](/photo_08102020_1.jpg)
