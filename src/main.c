@@ -109,10 +109,6 @@ int main() {
   // Built-in LED
   DDRB |= (1 << DDB5);
 
-  // Button bypass
-  DDRD &= ~(1 << DDD2); // DEBUG
-  // PORTD |= (1 << PORTD2); // DEBUG
-
   // ----------------------------------------
 
   // Enable hardware interrupts
