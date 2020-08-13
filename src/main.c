@@ -5,29 +5,32 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#include "twi.h"
-#include "midi.h"
+#include "io_expand.h"
+#include "serial_midi.h"
 #include "serial_print.h"
-#include "display.h"
+#include "text_lcd.h"
 
 // --------------------------------------------------
 
 // Pre-processor definitions
 
 // Delay period at boot
-#define DELAY_INIT 1000
+#define DELAY_INIT 1000U
 
 // Clock ticks per timer1 overflow
-#define TIMER1_LEN 16000
+#define TIMER1_LEN 16000U
 
 // Number of buttons (60, round up to multiple of 8)
-#define BUTTON_COUNT 64
+#define BUTTON_COUNT 64U
 
 // Number of bytes used to hold button states
-#define BUTTON_STATE_BYTES 8
+#define BUTTON_STATE_BYTES 8U
 
 // Duration that new button state must hold to be acknowledged (ms)
-#define BUTTON_ACK_DUR 1
+#define BUTTON_ACK_DUR 1U
+
+// Number of I/O expanders
+#define EXPANDER_COUNT 4U
 
 // --------------------------------------------------
 
@@ -47,28 +50,6 @@ volatile uint8_t button_state[BUTTON_STATE_BYTES];
 // Bit[6]:   End time wraps around due to overflow
 // Bit[5:0]: Start time of unacknowledged state
 volatile uint8_t button_unack_data[BUTTON_COUNT];
-
-// Whether a TWI operation is ongoing
-volatile uint8_t twi_ongoing;
-
-// --------------------------------------------------
-
-/*
-// Interrupt handler for timer0 overflow
-ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
-
-  // Update buttons' live states
-  if(PIND & (1 << PIND2)) {
-    button_state_pre[0] &= ~(1 << 0);
-  } else {
-    button_state_pre[0] |= (1 << 0);
-  }
-
-}
-*/
-
-// TODO: Instead of internal timer interrupts, use interrupts from external
-//       I/O expander, notified when external I/O ports change value
 
 // --------------------------------------------------
 
@@ -98,7 +79,6 @@ int main() {
   for(uint8_t i = 0; i < BUTTON_COUNT; i++) {
     button_unack_data[i];
   }
-  twi_ongoing = 0;
 
   // ----------------------------------------
 
@@ -140,206 +120,15 @@ int main() {
 
   // ----------------------------------------
 
-  // Stack variables
-
-  // Loop counter
-  uint8_t loop_count = 0;
-
-  // ----------------------------------------
-
-  // One-time routine
-
-  // Initialize MCP23017
-  if(!twi_ongoing) {
-
-    twi_ongoing = 1;
-
-    // Expander #1
-
-    // Transmit start condition
-    if(twi_transmit_start()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x20, 0)) {}
-    // Transmit register address of IOCON
-    if(twi_transmit_data(0x0a)) {}
-    // Transmit IOCON value
-    if(twi_transmit_data(0x00)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x20, 0)) {}
-    // Transmit register address of IODIRA
-    if(twi_transmit_data(0x00)) {}
-    // Transmit IODIRA value
-    if(twi_transmit_data(0xff)) {}
-    // Transmit IODIRB value
-    if(twi_transmit_data(0xff)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x20, 0)) {}
-    // Transmit register address of GPPUA
-    if(twi_transmit_data(0x0c)) {}
-    // Transmit GPPUA value
-    if(twi_transmit_data(0xff)) {}
-    // Transmit GPPUB value
-    if(twi_transmit_data(0xff)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x20, 0)) {}
-    // Transmit register address of IPOLA
-    if(twi_transmit_data(0x02)) {}
-    // Transmit IPOLA value
-    if(twi_transmit_data(0x00)) {}
-    // Transmit IPOLB value
-    if(twi_transmit_data(0x00)) {}
-
-    // Expander #2
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x21, 0)) {}
-    // Transmit register address of IOCON
-    if(twi_transmit_data(0x0a)) {}
-    // Transmit IOCON value
-    if(twi_transmit_data(0x00)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x21, 0)) {}
-    // Transmit register address of IODIRA
-    if(twi_transmit_data(0x00)) {}
-    // Transmit IODIRA value
-    if(twi_transmit_data(0xff)) {}
-    // Transmit IODIRB value
-    if(twi_transmit_data(0xff)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x21, 0)) {}
-    // Transmit register address of GPPUA
-    if(twi_transmit_data(0x0c)) {}
-    // Transmit GPPUA value
-    if(twi_transmit_data(0xff)) {}
-    // Transmit GPPUB value
-    if(twi_transmit_data(0xff)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x21, 0)) {}
-    // Transmit register address of IPOLA
-    if(twi_transmit_data(0x02)) {}
-    // Transmit IPOLA value
-    if(twi_transmit_data(0x00)) {}
-    // Transmit IPOLB value
-    if(twi_transmit_data(0x00)) {}
-
-    // Expander #3
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x22, 0)) {}
-    // Transmit register address of IOCON
-    if(twi_transmit_data(0x0a)) {}
-    // Transmit IOCON value
-    if(twi_transmit_data(0x00)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x22, 0)) {}
-    // Transmit register address of IODIRA
-    if(twi_transmit_data(0x00)) {}
-    // Transmit IODIRA value
-    if(twi_transmit_data(0xff)) {}
-    // Transmit IODIRB value
-    if(twi_transmit_data(0xff)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x22, 0)) {}
-    // Transmit register address of GPPUA
-    if(twi_transmit_data(0x0c)) {}
-    // Transmit GPPUA value
-    if(twi_transmit_data(0xff)) {}
-    // Transmit GPPUB value
-    if(twi_transmit_data(0xff)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x22, 0)) {}
-    // Transmit register address of IPOLA
-    if(twi_transmit_data(0x02)) {}
-    // Transmit IPOLA value
-    if(twi_transmit_data(0x00)) {}
-    // Transmit IPOLB value
-    if(twi_transmit_data(0x00)) {}
-
-    // Expander #4
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x23, 0)) {}
-    // Transmit register address of IOCON
-    if(twi_transmit_data(0x0a)) {}
-    // Transmit IOCON value
-    if(twi_transmit_data(0x00)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x23, 0)) {}
-    // Transmit register address of IODIRA
-    if(twi_transmit_data(0x00)) {}
-    // Transmit IODIRA value
-    if(twi_transmit_data(0xff)) {}
-    // Transmit IODIRB value
-    if(twi_transmit_data(0xff)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x23, 0)) {}
-    // Transmit register address of GPPUA
-    if(twi_transmit_data(0x0c)) {}
-    // Transmit GPPUA value
-    if(twi_transmit_data(0xff)) {}
-    // Transmit GPPUB value
-    if(twi_transmit_data(0xff)) {}
-
-    // Transmit restart condition
-    if(twi_transmit_restart()) {}
-    // Transmit slave address + write
-    if(twi_transmit_slaveaddr(0x23, 0)) {}
-    // Transmit register address of IPOLA
-    if(twi_transmit_data(0x02)) {}
-    // Transmit IPOLA value
-    if(twi_transmit_data(0x00)) {}
-    // Transmit IPOLB value
-    if(twi_transmit_data(0x00)) {}
-
-    // Transmit stop condition
-    twi_transmit_stop();
-
-    twi_ongoing = 0;
-
+  // Initialize MCP23017's
+  for(uint8_t expander_index = 0; expander_index < EXPANDER_COUNT;
+  expander_index++) {
+    io_expand_init(expander_index);
   }
 
   // DEBUG START
-  display_init();
-  display_clear();
+  text_lcd_init();
+  text_lcd_clear();
   PORTD |= (1 << PORTD6);
   PORTD |= (1 << PORTD5);
   PORTD |= (1 << PORTD3);
@@ -350,121 +139,12 @@ int main() {
   // Loop until poweroff
   while(1) {
 
-    // Infrequent code
-
-    // Once every 64 loop iterations
-    // if(!(loop_count & 0x3f)) {}
-
-    // ----------------------------------------
-
-    // Frequent code
-
-    // Update all buttons' live (pre-debounce) states via TWI
-    if(!twi_ongoing) {
-
-      twi_ongoing = 1;
-
-      // Expander #1
-
-      // Transmit start condition
-      if(twi_transmit_start()) {}
-      // Transmit slave address + write
-      if(twi_transmit_slaveaddr(0x20, 0)) {}
-      // Transmit register address of GPIOA
-      if(twi_transmit_data(0x12)) {}
-      // Transmit restart condition
-      if(twi_transmit_restart()) {}
-      // Transmit slave address + read
-      if(twi_transmit_slaveaddr(0x20, 1)) {}
-      // Proceed to receive data byte, then transmit ACK
-      if(twi_receive_data_ack(0)) {}
-
-      // Update button live states accordingly
-      button_state_pre[0] = ~TWDR;
-
-      // Proceed to receive data byte, then transmit NACK
-      if(twi_receive_data_nack(0)) {}
-
-      // Update button live states accordingly
-      button_state_pre[1] = ~TWDR;
-
-      // Expander #2
-
-      // Transmit restart condition
-      if(twi_transmit_restart()) {}
-      // Transmit slave address + write
-      if(twi_transmit_slaveaddr(0x21, 0)) {}
-      // Transmit register address of GPIOA
-      if(twi_transmit_data(0x12)) {}
-      // Transmit restart condition
-      if(twi_transmit_restart()) {}
-      // Transmit slave address + read
-      if(twi_transmit_slaveaddr(0x21, 1)) {}
-      // Proceed to receive data byte, then transmit ACK
-      if(twi_receive_data_ack(0)) {}
-
-      // Update button live states accordingly
-      button_state_pre[2] = ~TWDR;
-
-      // Proceed to receive data byte, then transmit NACK
-      if(twi_receive_data_nack(0)) {}
-
-      // Update button live states accordingly
-      button_state_pre[3] = ~TWDR;
-
-      // Expander #3
-
-      // Transmit restart condition
-      if(twi_transmit_restart()) {}
-      // Transmit slave address + write
-      if(twi_transmit_slaveaddr(0x22, 0)) {}
-      // Transmit register address of GPIOA
-      if(twi_transmit_data(0x12)) {}
-      // Transmit restart condition
-      if(twi_transmit_restart()) {}
-      // Transmit slave address + read
-      if(twi_transmit_slaveaddr(0x22, 1)) {}
-      // Proceed to receive data byte, then transmit ACK
-      if(twi_receive_data_ack(0)) {}
-
-      // Update button live states accordingly
-      button_state_pre[4] = ~TWDR;
-
-      // Proceed to receive data byte, then transmit NACK
-      if(twi_receive_data_nack(0)) {}
-
-      // Update button live states accordingly
-      button_state_pre[5] = ~TWDR;
-
-      // Expander #4
-
-      // Transmit restart condition
-      if(twi_transmit_restart()) {}
-      // Transmit slave address + write
-      if(twi_transmit_slaveaddr(0x23, 0)) {}
-      // Transmit register address of GPIOA
-      if(twi_transmit_data(0x12)) {}
-      // Transmit restart condition
-      if(twi_transmit_restart()) {}
-      // Transmit slave address + read
-      if(twi_transmit_slaveaddr(0x23, 1)) {}
-      // Proceed to receive data byte, then transmit ACK
-      if(twi_receive_data_ack(0)) {}
-
-      // Update button live states accordingly
-      button_state_pre[6] = ~TWDR;
-
-      // Proceed to receive data byte, then transmit NACK
-      if(twi_receive_data_nack(0)) {}
-
-      // Update button live states accordingly
-      button_state_pre[7] = ~TWDR;
-
-      // Transmit stop condition
-      twi_transmit_stop();
-
-      twi_ongoing = 0;
-
+    // Update all buttons' live (pre-debounce) states
+    for(uint8_t expander_index = 0; expander_index < EXPANDER_COUNT;
+    expander_index++) {
+      uint16_t expander_data = io_expand_read_bytes(expander_index);
+      button_state_pre[expander_index * 2] = (uint8_t) (expander_data >> 8);
+      button_state_pre[expander_index * 2 + 1] = (uint8_t) expander_data;
     }
 
     // Iterate through all buttons' live states and update acknowledged states
@@ -523,10 +203,10 @@ int main() {
             uint8_t note = ((button_index / 6) * 12) + (button_index % 6);
             if(curr_bit) {
               button_state[byte_index] &= ~(1 << bit_index);
-              midi_note_off(note);
+              serial_midi_note_off(note);
             } else {
               button_state[byte_index] |= (1 << bit_index);
-              midi_note_on(note, 127);
+              serial_midi_note_on(note, 127);
             }
           }
 
@@ -540,11 +220,6 @@ int main() {
 
       }
     }
-
-    // ----------------------------------------
-
-    // Increment loop counter
-    loop_count++;
 
   }
 

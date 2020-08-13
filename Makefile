@@ -43,12 +43,13 @@ compile:
 	@echo "Compiling."
 	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/main.o $(PATH_SRC)/main.c
 	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/twi.o $(PATH_SRC)/twi.c
-	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/midi.o $(PATH_SRC)/midi.c
+	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/io_expand.o $(PATH_SRC)/io_expand.c
+	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/serial_midi.o $(PATH_SRC)/serial_midi.c
 	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/serial_print.o $(PATH_SRC)/serial_print.c
-	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/display.o $(PATH_SRC)/display.c
+	@$(CC) $(CFLAGS) -o $(PATH_BUILD)/text_lcd.o $(PATH_SRC)/text_lcd.c
 	@$(CC) $(LFLAGS) -o $(PATH_BUILD)/program $(PATH_BUILD)/main.o \
-$(PATH_BUILD)/twi.o $(PATH_BUILD)/midi.o $(PATH_BUILD)/serial_print.o \
-$(PATH_BUILD)/display.o
+$(PATH_BUILD)/twi.o $(PATH_BUILD)/io_expand.o $(PATH_BUILD)/serial_midi.o \
+$(PATH_BUILD)/serial_print.o $(PATH_BUILD)/text_lcd.o
 	@$(OC) $(OCFLAGS) $(PATH_BUILD)/program $(PATH_BUILD)/program.hex
 
 # --------------------------------------------------

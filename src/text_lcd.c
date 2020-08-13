@@ -1,7 +1,7 @@
 #include "common.h"
 #include <avr/io.h>
 #include <util/delay.h>
-#include "display.h"
+#include "text_lcd.h"
 
 // Delay after each instruction
 #define DELAY_BUSY 5
@@ -21,7 +21,7 @@ volatile uint8_t rgb_incr_color_val;
 
 // --------------------------------------------------
 
-void display_init() {
+void text_lcd_init() {
 
   // Initialize variables
   pwm_rgb_red = 0;
@@ -101,7 +101,7 @@ void display_init() {
 
 // --------------------------------------------------
 
-void display_clear() {
+void text_lcd_clear() {
 
   PORTB |= (1 << PORTB3);
   PORTB &= ~(1 << PORTB3);
@@ -116,7 +116,7 @@ void display_clear() {
 
 // --------------------------------------------------
 
-void display_write_char(uint8_t code) {
+void text_lcd_write_char(uint8_t code) {
 
   // Enable: rising edge
   PORTB |= (1 << PORTB3);
@@ -208,7 +208,7 @@ void display_write_char(uint8_t code) {
 
 // --------------------------------------------------
 
-void display_write_number(uint64_t number) {
+void text_lcd_write_number(uint64_t number) {
 
   uint8_t i;
 
@@ -228,14 +228,14 @@ void display_write_number(uint64_t number) {
   for(i = 0; i < length; i++) {
     curr_digit = (uint8_t) ((number / divisor) % 10);
     divisor /= 10;
-    display_write_char(CHAR_NUMERIC_OFFSET + curr_digit);
+    text_lcd_write_char(CHAR_NUMERIC_OFFSET + curr_digit);
   }
 
 }
 
 // --------------------------------------------------
 
-void display_place_cursor(uint16_t row, uint16_t col) {
+void text_lcd_place_cursor(uint16_t row, uint16_t col) {
 
   uint8_t index = (0x40 * row) + col;
 
@@ -325,7 +325,7 @@ void display_place_cursor(uint16_t row, uint16_t col) {
 
 // --------------------------------------------------
 
-void display_set_backlight_rgb(uint8_t red, uint8_t green, uint8_t blue) {
+void text_lcd_set_backlight_rgb(uint8_t red, uint8_t green, uint8_t blue) {
 
   pwm_rgb_red = red;
   pwm_rgb_green = green;
@@ -339,14 +339,14 @@ void display_set_backlight_rgb(uint8_t red, uint8_t green, uint8_t blue) {
 
 // --------------------------------------------------
 
-void display_backlight_rgb_trans() {
+void text_lcd_backlight_rgb_trans() {
 
   if(!rgb_trans_on) {
     return;
   }
 
   if(rgb_incr_color == 0) {
-    display_set_backlight_rgb(rgb_incr_color_val, 0,
+    text_lcd_set_backlight_rgb(rgb_incr_color_val, 0,
     PWM_MAX - rgb_incr_color_val);
     if(rgb_incr_color_val == PWM_MAX) {
       rgb_incr_color = 1;
@@ -356,7 +356,7 @@ void display_backlight_rgb_trans() {
     }
   }
   else if(rgb_incr_color == 1) {
-    display_set_backlight_rgb(PWM_MAX - rgb_incr_color_val,
+    text_lcd_set_backlight_rgb(PWM_MAX - rgb_incr_color_val,
     rgb_incr_color_val, 0);
     if(rgb_incr_color_val == PWM_MAX) {
       rgb_incr_color = 2;
@@ -366,7 +366,7 @@ void display_backlight_rgb_trans() {
     }
   }
   else if(rgb_incr_color == 2) {
-    display_set_backlight_rgb(0, PWM_MAX - rgb_incr_color_val,
+    text_lcd_set_backlight_rgb(0, PWM_MAX - rgb_incr_color_val,
     rgb_incr_color_val);
     if(rgb_incr_color_val == PWM_MAX) {
       rgb_incr_color = 0;
@@ -380,7 +380,7 @@ void display_backlight_rgb_trans() {
 
 // --------------------------------------------------
 
-void display_backlight_rgb_trans_on() {
+void text_lcd_backlight_rgb_trans_on() {
 
   rgb_trans_on = 1;
 
@@ -388,7 +388,7 @@ void display_backlight_rgb_trans_on() {
 
 // --------------------------------------------------
 
-void display_backlight_rgb_trans_off() {
+void text_lcd_backlight_rgb_trans_off() {
 
   rgb_trans_on = 0;
 
