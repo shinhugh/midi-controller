@@ -8,7 +8,7 @@
 void io_expand_init(uint8_t addr) {
 
   addr &= 0x07;
-  addr += 0x20;
+  addr |= 0x20;
 
   // Transmit start condition
   twi_transmit_start();
@@ -61,10 +61,10 @@ void io_expand_init(uint8_t addr) {
 
 uint16_t io_expand_read_bytes(uint8_t addr) {
 
-  uint16_t data;
+  uint16_t data = 0;
 
   addr &= 0x07;
-  addr += 0x20;
+  addr |= 0x20;
 
   // Transmit start condition
   twi_transmit_start();
@@ -72,6 +72,7 @@ uint16_t io_expand_read_bytes(uint8_t addr) {
   twi_transmit_slaveaddr(addr, 0);
   // Transmit register address of GPIOA
   twi_transmit_data(0x12);
+
   // Transmit restart condition
   twi_transmit_restart();
   // Transmit slave address + read
@@ -80,27 +81,19 @@ uint16_t io_expand_read_bytes(uint8_t addr) {
   twi_receive_data_ack(0);
 
   // Place as MSB
-  data = ~TWDR;
+  data |= (uint16_t) TWDR;
   data = data << 8;
 
   // Proceed to receive data byte, then transmit NACK
   twi_receive_data_nack(0);
 
   // Place as LSB
-  data |= ~TWDR;
+  data |= (uint16_t) TWDR;
 
   // Transmit stop condition
   twi_transmit_stop();
 
   // Return data
-  return data;
+  return ~data;
 
 }
-
-// --------------------------------------------------
-
-// TODO
-
-// --------------------------------------------------
-
-// TODO

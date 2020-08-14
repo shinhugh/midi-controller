@@ -1,6 +1,9 @@
 #include "common.h"
 #include <avr/io.h>
+#include <util/delay.h>
 #include "twi.h"
+
+#define TWI_STOP_PERIOD 10U
 
 // --------------------------------------------------
 
@@ -33,6 +36,7 @@ uint8_t twi_transmit_restart() {
 void twi_transmit_stop() {
 
   TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
+  _delay_us(TWI_STOP_PERIOD);
 
 }
 

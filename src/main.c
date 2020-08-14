@@ -122,14 +122,6 @@ int main() {
     io_expand_init(expander_index);
   }
 
-  // DEBUG START
-  text_lcd_init();
-  text_lcd_clear();
-  PORTD |= (1 << PORTD6);
-  PORTD |= (1 << PORTD5);
-  PORTD |= (1 << PORTD3);
-  // DEBUG FINISH
-
   // ----------------------------------------
 
   // Loop until poweroff
@@ -140,7 +132,7 @@ int main() {
     expander_index++) {
       uint16_t expander_data = io_expand_read_bytes(expander_index);
       button_state_pre[expander_index * 2] = (uint8_t) (expander_data >> 8);
-      button_state_pre[expander_index * 2 + 1] = (uint8_t) expander_data;
+      button_state_pre[(expander_index * 2) + 1] = (uint8_t) expander_data;
     }
 
     // Iterate through all buttons' live states and update acknowledged states

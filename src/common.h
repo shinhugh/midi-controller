@@ -3,6 +3,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <stdint.h>
+
 // --------------------------------------------------
 
 // Pre-processor definitions
@@ -12,6 +14,13 @@
 
 // PWM duty cycle maximum value
 #define PWM_MAX 255U
+
+// --------------------------------------------------
+
+// Global variables
+
+// Elapsed time in milliseconds (reset at 2^16)
+extern volatile uint16_t elapsed_ms;
 
 // --------------------------------------------------
 
