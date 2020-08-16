@@ -7,7 +7,6 @@
 #include <util/delay.h>
 #include "io_expand.h"
 #include "serial_midi.h"
-#include "serial_print.h"
 #include "text_lcd.h"
 
 // --------------------------------------------------
