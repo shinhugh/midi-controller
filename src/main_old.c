@@ -29,8 +29,8 @@
 // Number of I/O expanders
 #define EXPANDER_COUNT 4U
 
-// Duration that new button state must hold to be acknowledged (iterations)
-#define BUTTON_ACK_DUR 2U
+// Duration that new button state must hold to be acknowledged (ms)
+#define BUTTON_ACK_DUR 1U
 
 // --------------------------------------------------
 
@@ -45,7 +45,10 @@ volatile uint8_t button_state_pre[BUTTON_STATE_BYTES];
 // Button input states, acknowledged (after debouncing)
 volatile uint8_t button_state[BUTTON_STATE_BYTES];
 
-// Number of loop iterations a button's unacknowledged state has held for
+// Data on buttons with unacknowledged states
+// Bit[7]:   Unacknowledged state on/off
+// Bit[6]:   End time wraps around due to overflow
+// Bit[5:0]: Start time of unacknowledged state
 volatile uint8_t button_unack_data[BUTTON_COUNT];
 
 // --------------------------------------------------
@@ -144,8 +147,44 @@ int main() {
 
         // If button's live state does not match acknowledged state
         if(curr_bit_pre != curr_bit) {
+
+          // Sample current time (elapsed ms)
+          uint8_t time_sample = ((uint8_t) elapsed_ms) & 0x3f;
+          // Button unacknowledged state start time
+          uint8_t start_time = button_unack_data[button_index] & 0x3f;
+
+          // If unacknowledged state isn't set
+          if(!button_unack_data[button_index]) {
+            // Set unacknowledged state
+            button_unack_data[button_index] = time_sample;
+            if((button_unack_data[button_index] + BUTTON_ACK_DUR) >= 0x40) {
+              button_unack_data[button_index] |= 0x40;
+            }
+            button_unack_data[button_index] |= 0x80;
+          }
+
           // If unacknowledged state has held long enough
-          if(button_unack_data[button_index] >= BUTTON_ACK_DUR) {
+          else if(
+            (
+              !(button_unack_data[button_index] & 0x40)
+              &&
+              !(
+                (start_time <= time_sample)
+                &&
+                (start_time + BUTTON_ACK_DUR > time_sample)
+              )
+            )
+            ||
+            (
+              (button_unack_data[button_index] & 0x40)
+              &&
+              (
+                (((start_time + BUTTON_ACK_DUR) & 0x3f) <= time_sample)
+                &&
+                (start_time > time_sample)
+              )
+            )
+          ) {
             // Clear unacknowledged state
             button_unack_data[button_index] = 0;
             // Flip button state and generate MIDI event
@@ -158,10 +197,7 @@ int main() {
               serial_midi_note_on(note, 127);
             }
           }
-          // If unacknowledged state has not yet held long enough
-          else {
-            button_unack_data[button_index]++;
-          }
+
         }
 
         // If button's live state matches acknowledged state
