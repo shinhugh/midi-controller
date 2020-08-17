@@ -17,7 +17,11 @@
 #define DELAY_INIT 1000U
 
 // Clock ticks per timer1 overflow
-#define TIMER1_LEN 16000U
+// #define TIMER1_LEN 16000U
+
+// Value for USART baud rate register (refer to formula in datasheet)
+// 103 for 9600, 31 for 31250
+#define USART_BAUD_VAL 31U
 
 // Number of buttons (60, round up to multiple of 8)
 #define BUTTON_COUNT 64U
@@ -36,7 +40,7 @@
 // Global variables
 
 // Elapsed time in milliseconds (reset at 2^16)
-volatile uint16_t elapsed_ms;
+// volatile uint16_t elapsed_ms;
 
 // Button input states, live (before debouncing)
 volatile uint8_t button_state_pre[BUTTON_STATE_BYTES];
@@ -49,6 +53,7 @@ volatile uint8_t button_unack_data[BUTTON_COUNT];
 
 // --------------------------------------------------
 
+/*
 // Interrupt handler for timer1 compare match
 ISR(TIMER1_COMPA_vect, ISR_NOBLOCK) {
 
@@ -56,18 +61,19 @@ ISR(TIMER1_COMPA_vect, ISR_NOBLOCK) {
   elapsed_ms++;
 
 }
+*/
 
 // --------------------------------------------------
 
 int main() {
 
-  // Briefly pause before running any code to allow peripherals to boot
+  // Briefly pause before running any code to allow peripherals to reset
   _delay_ms(DELAY_INIT);
 
   // ----------------------------------------
 
   // Initialize global variables
-  elapsed_ms = 0;
+  // elapsed_ms = 0;
   for(uint8_t i = 0; i < BUTTON_STATE_BYTES; i++) {
     button_state_pre[i] = 0;
     button_state[i] = 0;
@@ -78,16 +84,18 @@ int main() {
 
   // ----------------------------------------
 
+  /*
   // Configure and enable timers
   TCNT1 = 0;
   OCR1A = TIMER1_LEN - 1;
   TCCR1B = (1 << WGM12) | (1 << CS10);
   TIMSK1 = (1 << OCIE1A);
+  */
 
   // ----------------------------------------
 
   // Initialize USART
-  UBRR0L = (uint8_t) 31; // 103 for 9600, 31 for 31250
+  UBRR0L = USART_BAUD_VAL;
   UCSR0B = (1 << TXEN0);
   UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 
@@ -108,7 +116,7 @@ int main() {
   // ----------------------------------------
 
   // Enable hardware interrupts
-  sei();
+  // sei();
 
   // ----------------------------------------
 
