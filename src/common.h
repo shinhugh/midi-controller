@@ -17,11 +17,4 @@
 
 // --------------------------------------------------
 
-// Global variables
-
-// Elapsed time in milliseconds (reset at 2^16)
-extern volatile uint16_t elapsed_ms;
-
-// --------------------------------------------------
-
 #endif

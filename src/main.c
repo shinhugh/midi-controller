@@ -7,7 +7,6 @@
 #include <util/delay.h>
 #include "io_expand.h"
 #include "serial_midi.h"
-#include "text_lcd.h"
 
 // --------------------------------------------------
 
@@ -16,11 +15,8 @@
 // Delay period at boot
 #define DELAY_INIT 1000U
 
-// Clock ticks per timer1 overflow
-// #define TIMER1_LEN 16000U
-
 // Value for USART baud rate register (refer to formula in datasheet)
-// 103 for 9600, 31 for 31250
+// 103 for 9600 Hz, 31 for 31250 Hz
 #define USART_BAUD_VAL 31U
 
 // Number of buttons (60, round up to multiple of 8)
@@ -39,9 +35,6 @@
 
 // Global variables
 
-// Elapsed time in milliseconds (reset at 2^16)
-// volatile uint16_t elapsed_ms;
-
 // Button input states, live (before debouncing)
 volatile uint8_t button_state_pre[BUTTON_STATE_BYTES];
 
@@ -53,18 +46,6 @@ volatile uint8_t button_unack_data[BUTTON_COUNT];
 
 // --------------------------------------------------
 
-/*
-// Interrupt handler for timer1 compare match
-ISR(TIMER1_COMPA_vect, ISR_NOBLOCK) {
-
-  // Increment elapsed time
-  elapsed_ms++;
-
-}
-*/
-
-// --------------------------------------------------
-
 int main() {
 
   // Briefly pause before running any code to allow peripherals to reset
@@ -73,7 +54,6 @@ int main() {
   // ----------------------------------------
 
   // Initialize global variables
-  // elapsed_ms = 0;
   for(uint8_t i = 0; i < BUTTON_STATE_BYTES; i++) {
     button_state_pre[i] = 0;
     button_state[i] = 0;
@@ -81,16 +61,6 @@ int main() {
   for(uint8_t i = 0; i < BUTTON_COUNT; i++) {
     button_unack_data[i];
   }
-
-  // ----------------------------------------
-
-  /*
-  // Configure and enable timers
-  TCNT1 = 0;
-  OCR1A = TIMER1_LEN - 1;
-  TCCR1B = (1 << WGM12) | (1 << CS10);
-  TIMSK1 = (1 << OCIE1A);
-  */
 
   // ----------------------------------------
 
@@ -112,11 +82,6 @@ int main() {
 
   // Built-in LED
   DDRB |= (1 << DDB5);
-
-  // ----------------------------------------
-
-  // Enable hardware interrupts
-  // sei();
 
   // ----------------------------------------
 
