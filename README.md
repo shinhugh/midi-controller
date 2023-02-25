@@ -1,9 +1,9 @@
 # MIDI Controller 10x6
 
-Currently in the process of building a MIDI controller. It will mimic the
-[Launchpad](https://novationmusic.com/en/launch) or
+Firmware for a fully functional class-compliant USB MIDI controller. It mimics
+the [Launchpad](https://novationmusic.com/en/launch) and
 [MIDI Fighter](https://www.midifighter.com) while catering more to my specific
-needs as a producer. Naturally, this means that the MIDI mapping will fit that
+needs as a producer. Naturally, this means that the MIDI mapping fits that
 of FL Studio's performance mode.
 
 The number of rows being greater than the number of columns is not arbitrary.
